@@ -3,8 +3,8 @@ using UnityEngine.UI;
 
 public class MatchButton : MonoBehaviour
 {
-    [SerializeField] private GameObject editPanel;
-    [SerializeField] private Camera camera;
+    //[SerializeField] private GameObject editPanel;
+  //  [SerializeField] private Camera camera;
     [SerializeField] private Button button;
     private void Awake()
     {
@@ -13,6 +13,6 @@ public class MatchButton : MonoBehaviour
 
     private void MoveToEdit()
     {
-        camera.transform.position = editPanel.transform.position;
+        //camera.transform.position = editPanel.transform.position;
     }
 }
