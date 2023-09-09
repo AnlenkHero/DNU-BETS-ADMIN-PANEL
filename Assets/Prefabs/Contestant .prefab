@@ -738,6 +738,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2421183743865069293}
+  - component: {fileID: 3823644409592106400}
   m_Layer: 5
   m_Name: 'Contestant '
   m_TagString: Untagged
@@ -767,6 +768,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &3823644409592106400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6044388968578266106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef4c06170f3d4c79a24325614b245354, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nameField: {fileID: 5023299740133491491}
+  coefficientField: {fileID: 8108713760528291158}
+  isWinnerToggle: {fileID: 7485336611833588944}
 --- !u!1 &7483792992294854610
 GameObject:
   m_ObjectHideFlags: 0

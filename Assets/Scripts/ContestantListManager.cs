@@ -1,17 +1,19 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-public class MatchListManager : MonoBehaviour
+public class ContestantListManager : MonoBehaviour
 {
     [SerializeField] private Button decreaseButton;
     [SerializeField] private Button increaseButton;
     [SerializeField] private TextMeshProUGUI contenderCounter;
-    [SerializeField] private GameObject contenderEditorPrefab;
-    [SerializeField] private Transform contenderEditorPrefabParent;
+    [FormerlySerializedAs("contenderEditorPrefab")]
+    [SerializeField] private GameObject contestantEditorPrefab;
+    [FormerlySerializedAs("contenderEditorPrefabParent")]
+    [SerializeField] private Transform contestantEditorPrefabParent;
+    
     private List<GameObject> _contenderList = new ();
 
     private void Awake()
@@ -24,47 +26,37 @@ public class MatchListManager : MonoBehaviour
     {
         for (int i = 0; i < 2; i++)
         {
-            var tempContenderPrefab = Instantiate(contenderEditorPrefab,contenderEditorPrefabParent);
+            var tempContenderPrefab = Instantiate(contestantEditorPrefab,contestantEditorPrefabParent);
             _contenderList.Add(tempContenderPrefab);
         }
-        DisableEnableButton(decreaseButton,false);
-        UpdateContenderCounter();
+        decreaseButton.interactable = false;
+        contenderCounter.text = _contenderList.Count.ToString();
     }
 
     private void Decrease()
     {
         if (_contenderList.Count <= 2) 
         {
-            DisableEnableButton(decreaseButton,false);
+            decreaseButton.interactable = false;
             return;
         }
         var tempContenderPrefab = _contenderList[^1];
         _contenderList.Remove(tempContenderPrefab);
         Destroy(tempContenderPrefab);
-        DisableEnableButton(increaseButton,true);
-        UpdateContenderCounter();
+        increaseButton.interactable = true;
+        contenderCounter.text = _contenderList.Count.ToString();
     }
 
     private void Increase()
     {     
         if (_contenderList.Count >= 6) 
         { 
-            DisableEnableButton(increaseButton,false);
+            increaseButton.interactable = false;
             return;
         }
-        var tempContenderPrefab = Instantiate(contenderEditorPrefab,contenderEditorPrefabParent);
+        var tempContenderPrefab = Instantiate(contestantEditorPrefab,contestantEditorPrefabParent);
         _contenderList.Add(tempContenderPrefab);
-        DisableEnableButton(decreaseButton,true);
-        UpdateContenderCounter();
-    }
-    private void UpdateContenderCounter()
-    {
+        decreaseButton.interactable = true;
         contenderCounter.text = _contenderList.Count.ToString();
     }
-
-    private void DisableEnableButton(Button button, bool state)
-    {
-        button.interactable = state;
-    }
-    
 }
