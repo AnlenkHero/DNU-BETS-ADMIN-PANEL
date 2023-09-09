@@ -19,7 +19,6 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private TMP_InputField matchTitle;
     [SerializeField] private Toggle bettingAvailableToggle;
     
-    private const string FirebaseURL = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
     private static readonly CultureInfo DefaultDateCulture = CultureInfo.InvariantCulture;
     
     private void Awake()
@@ -43,43 +42,33 @@ public class EditorManager : MonoBehaviour
             matchToCreate.FinishedDateUtc = DateTime.UtcNow.ToString(DefaultDateCulture);
         }
         
-        MatchesRepository.Save(matchToCreate, matchImage.texture as Texture2D).Then(response =>
+        MatchesRepository.Save(matchToCreate, matchImage.texture as Texture2D).Then(newMatchId =>
         {
-            var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
+            Debug.Log($"Match saved successfully with ID: {newMatchId}");
 
-            if (jsonResponse != null && jsonResponse.TryGetValue("name", out string newMatchId))
+            Match newMatch = new Match
             {
-                Debug.Log($"Match saved successfully with ID: {newMatchId}");
+                Id = newMatchId,
+                ImageUrl = matchToCreate.ImageUrl,
+                MatchTitle = matchToCreate.MatchTitle,
+                IsBettingAvailable = matchToCreate.IsBettingAvailable,
+                FinishedDateUtc = matchToCreate.FinishedDateUtc, 
+                Contestants = new List<Contestant>()
+            };
 
-                Match newMatch = new Match
+            for (int i = 0; i < matchToCreate.Contestants.Count; i++)
+            {
+                Contestant newContestant = new Contestant
                 {
-                    Id = newMatchId,
-                    ImageUrl = matchToCreate.ImageUrl,
-                    MatchTitle = matchToCreate.MatchTitle,
-                    IsBettingAvailable = matchToCreate.IsBettingAvailable,
-                    FinishedDateUtc = matchToCreate.FinishedDateUtc, 
-                    Contestants = new List<Contestant>()
+                    Id = i.ToString(),
+                    Name = matchToCreate.Contestants[i].Name,
+                    Coefficient = matchToCreate.Contestants[i].Coefficient,
+                    Winner = matchToCreate.Contestants[i].Winner
                 };
-
-                for (int i = 0; i < matchToCreate.Contestants.Count; i++)
-                {
-                    Contestant newContestant = new Contestant
-                    {
-                        Id = i.ToString(),
-                        Name = matchToCreate.Contestants[i].Name,
-                        Coefficient = matchToCreate.Contestants[i].Coefficient,
-                        Winner = matchToCreate.Contestants[i].Winner
-                    };
-                    newMatch.Contestants.Add(newContestant);
-                }
-
-                MatchesCache.Matches.Add(newMatch);
-            }
-            else
-            {
-                Debug.LogWarning("Could not retrieve the Firebase ID for the newly created match.");
+                newMatch.Contestants.Add(newContestant);
             }
 
+            MatchesCache.Matches.Add(newMatch);
         }).Catch(error =>
         {
             Debug.LogError($"Failed to save match: {error.Message}");
