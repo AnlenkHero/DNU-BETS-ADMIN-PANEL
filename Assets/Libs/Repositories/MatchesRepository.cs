@@ -51,6 +51,12 @@ namespace Libs.Repositories
 
         public static IPromise<ResponseHelper> DeleteMatch(string matchId)
         {
+            if (matchId == null)
+            {
+                var promise = new Promise<ResponseHelper>(); 
+                promise.Reject(new Exception("Id is null"));
+                return promise;
+            }
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
             return RestClient.Delete(url);
         }

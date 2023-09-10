@@ -141,8 +141,7 @@ public class EditorManager : MonoBehaviour
 
     private void DeleteMatch()
     {
-        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID);////TODO MOVE TO OTHER SCENE .Then().Catch();
-        MatchesCache.selectedMatchID = null;
+        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID);////TODO MOVE TO OTHER SCENE .Then(MatchesCache.selectedMatchID = null;).Catch();
     }
 
     private void CheckDeleteButtonConditions()
