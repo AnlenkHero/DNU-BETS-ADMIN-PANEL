@@ -49,6 +49,29 @@ namespace Libs.Repositories
             return promise;
         }
 
+        public static IPromise<ResponseHelper> DeleteMatch(string matchId)
+        {
+            string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            return RestClient.Delete(url);
+        }
+        public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,Texture2D imageToChange = null)
+        {
+            string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            var promise = new Promise<ResponseHelper>();
+            
+            if (imageToChange != null)
+            {
+               UploadImage(imageToChange,$"{Guid.NewGuid()}.png").Then(imageToChange =>
+                {
+                    matchToUpdate.ImageUrl = imageToChange;
+                    RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
+                        .Catch(error => promise.Reject(error));
+                });
+               return promise;
+            }
+            return RestClient.Put(url, matchToUpdate);
+        }
+        
         public static Promise<List<Match>> GetAllMatches()
         {
             return new Promise<List<Match>>((resolve, reject) =>
@@ -99,6 +122,7 @@ namespace Libs.Repositories
             });
         }
 
+        
         private static Promise<string> UploadImage(Texture2D imageToUpload, string fileName)
         {
             return new Promise<string>((resolve, reject) =>

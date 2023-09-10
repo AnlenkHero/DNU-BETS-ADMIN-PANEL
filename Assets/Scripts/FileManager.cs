@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,7 +8,7 @@ using UnityEngine.Networking;
 public class FileManager : MonoBehaviour
 {
    [SerializeField] private RawImage rawImage;
-
+   public static event Action OnImageSelected;
    public void OpenFileBrowser()
    {
       var bp = new BrowserProperties();
@@ -34,6 +35,7 @@ public class FileManager : MonoBehaviour
          {
             var uwrTexture = DownloadHandlerTexture.GetContent(uwr);
             rawImage.texture = uwrTexture;
+            OnImageSelected?.Invoke();
          }
       }
    }

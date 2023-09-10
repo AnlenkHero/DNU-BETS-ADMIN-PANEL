@@ -7,6 +7,7 @@ using Libs.Models.RequestModels;
 using Libs.Repositories;
 using Newtonsoft.Json;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,17 +19,29 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private RawImage matchImage;
     [SerializeField] private TMP_InputField matchTitle;
     [SerializeField] private Toggle bettingAvailableToggle;
+    [SerializeField] private GameObject successPanel;
+    [SerializeField] private GameObject failPanel;
+    [SerializeField] private TextMeshProUGUI failText;//low lvl lazy TODO REFACTOR POP UP.
+    private bool imageUpdated;
     
     private static readonly CultureInfo DefaultDateCulture = CultureInfo.InvariantCulture;
-    
+
+    private void OnEnable()
+    {
+        FileManager.OnImageSelected += () => imageUpdated = true;
+    }
+
     private void Awake()
     {
+        CheckDeleteButtonConditions();
         saveButton.onClick.AddListener(SaveMatch);
         deleteButton.onClick.AddListener(DeleteMatch);
     }
         
     private void SaveMatch()
     {
+        saveButton.interactable = false;
+        
         ContestantFormView[] contestantViews = contestantListParent.GetComponentsInChildren<ContestantFormView>();
         var matchToCreate = new MatchRequest()
         {
@@ -41,41 +54,73 @@ public class EditorManager : MonoBehaviour
         {
             matchToCreate.FinishedDateUtc = DateTime.UtcNow.ToString(DefaultDateCulture);
         }
-        
-        MatchesRepository.Save(matchToCreate, matchImage.texture as Texture2D).Then(newMatchId =>
+
+        if (MatchesCache.selectedMatchID == null)
         {
-            Debug.Log($"Match saved successfully with ID: {newMatchId}");
-
-            Match newMatch = new Match
+            MatchesRepository.Save(matchToCreate, matchImage.texture as Texture2D).Then(newMatchId =>
             {
-                Id = newMatchId,
-                ImageUrl = matchToCreate.ImageUrl,
-                MatchTitle = matchToCreate.MatchTitle,
-                IsBettingAvailable = matchToCreate.IsBettingAvailable,
-                FinishedDateUtc = matchToCreate.FinishedDateUtc, 
-                Contestants = new List<Contestant>()
-            };
+                MatchesCache.selectedMatchID = newMatchId;
 
-            for (int i = 0; i < matchToCreate.Contestants.Count; i++)
+                successPanel.SetActive(true);
+
+                MatchesCache.matches.Add(GetMatchModel(newMatchId, matchToCreate));
+                
+            }).Catch(error =>
             {
-                Contestant newContestant = new Contestant
-                {
-                    Id = i.ToString(),
-                    Name = matchToCreate.Contestants[i].Name,
-                    Coefficient = matchToCreate.Contestants[i].Coefficient,
-                    Winner = matchToCreate.Contestants[i].Winner
-                };
-                newMatch.Contestants.Add(newContestant);
-            }
-
-            MatchesCache.Matches.Add(newMatch);
-        }).Catch(error =>
+                failText.text = error.Message;
+                failPanel.SetActive(true);
+            }).Finally(() =>
+            {
+                saveButton.interactable = true;
+                deleteButton.interactable = true;
+            });
+        }
+        else
         {
-            Debug.LogError($"Failed to save match: {error.Message}");
-            //TODO show poup
-        });
+            MatchesRepository.UpdateMatch(MatchesCache.selectedMatchID,matchToCreate,imageUpdated? matchImage.texture as Texture2D : null ).Then(newMatchId =>
+            {
+                var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
+
+                successPanel.SetActive(true);
+
+                MatchesCache.matches.Remove(MatchesCache.matches.First(x => x.Id == MatchesCache.selectedMatchID));
+                MatchesCache.matches.Add(matchModel);
+                //TODO LOW LVL OPTIMIZE!!!
+            }).Catch(error =>
+            {
+                failText.text = error.Message;
+                failPanel.SetActive(true);
+            }).Finally(() => saveButton.interactable = true);
+        }
     }
-    
+
+    private Match GetMatchModel(string newMatchId, MatchRequest createdMatchToCreate)
+    {
+        Match newMatch = new Match
+        {
+            Id = newMatchId,
+            ImageUrl = createdMatchToCreate.ImageUrl,
+            MatchTitle = createdMatchToCreate.MatchTitle,
+            IsBettingAvailable = createdMatchToCreate.IsBettingAvailable,
+            FinishedDateUtc = createdMatchToCreate.FinishedDateUtc,
+            Contestants = new List<Contestant>()
+        };
+
+        for (int i = 0; i < createdMatchToCreate.Contestants.Count; i++)
+        {
+            Contestant newContestant = new Contestant
+            {
+                Id = i.ToString(),
+                Name = createdMatchToCreate.Contestants[i].Name,
+                Coefficient = createdMatchToCreate.Contestants[i].Coefficient,
+                Winner = createdMatchToCreate.Contestants[i].Winner
+            };
+            newMatch.Contestants.Add(newContestant);
+        }
+
+        return newMatch;
+    }
+
     private List<ContestantRequest> GetContestants(IEnumerable<ContestantFormView> views)
     {
         var contestants = new List<ContestantRequest>();
@@ -96,6 +141,13 @@ public class EditorManager : MonoBehaviour
 
     private void DeleteMatch()
     {
-        //TODO
+        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID);////TODO MOVE TO OTHER SCENE .Then().Catch();
+        MatchesCache.selectedMatchID = null;
+    }
+
+    private void CheckDeleteButtonConditions()
+    {
+        if (MatchesCache.selectedMatchID == null)
+            deleteButton.interactable = false;
     }
 }
