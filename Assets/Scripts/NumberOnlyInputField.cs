@@ -18,7 +18,13 @@ public class NumberOnlyInputField : MonoBehaviour
         {
             return addedChar;
         }
-        return '\0';
+        
+        if (addedChar == ',' && !text.Contains(","))
+        {
+            return addedChar;
+        }
+
+        return '\0'; 
     }
 
     private void ResetPlaceholder(string value)
