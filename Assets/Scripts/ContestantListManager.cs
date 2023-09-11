@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Libs.Models;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -10,11 +11,11 @@ public class ContestantListManager : MonoBehaviour
     [SerializeField] private Button increaseButton;
     [SerializeField] private TextMeshProUGUI contenderCounter;
     [FormerlySerializedAs("contenderEditorPrefab")]
-    [SerializeField] private GameObject contestantEditorPrefab;
+    [SerializeField] private ContestantFormView contestantEditorPrefab;
     [FormerlySerializedAs("contenderEditorPrefabParent")]
     [SerializeField] private Transform contestantEditorPrefabParent;
     
-    private List<GameObject> _contenderList = new ();
+    private List<ContestantFormView> _contenderList = new ();
 
     private void Awake()
     {
@@ -24,13 +25,32 @@ public class ContestantListManager : MonoBehaviour
 
     private void Start()
     {
-        for (int i = 0; i < 2; i++)
+        if (MatchesCache.selectedMatchID == null)
         {
-            var tempContenderPrefab = Instantiate(contestantEditorPrefab,contestantEditorPrefabParent);
-            _contenderList.Add(tempContenderPrefab);
+            for (int i = 0; i < 2; i++)
+            {
+                var tempContenderPrefab = Instantiate(contestantEditorPrefab, contestantEditorPrefabParent);
+                _contenderList.Add(tempContenderPrefab);
+            }
+
+            decreaseButton.interactable = false;
+            contenderCounter.text = _contenderList.Count.ToString();
         }
-        decreaseButton.interactable = false;
+    }
+
+    public void SetData(Match match)
+    {
+        foreach (var contestant in match.Contestants)
+        {
+            var tempContenderPrefab = Instantiate(contestantEditorPrefab, contestantEditorPrefabParent);
+            _contenderList.Add(tempContenderPrefab);
+            tempContenderPrefab.SetData(contestant);
+        }
         contenderCounter.text = _contenderList.Count.ToString();
+        if(_contenderList.Count <= 2)
+            decreaseButton.interactable = false;
+        else if (_contenderList.Count >= 6)
+            increaseButton.interactable = false;
     }
 
     private void Decrease()
@@ -42,7 +62,7 @@ public class ContestantListManager : MonoBehaviour
         }
         var tempContenderPrefab = _contenderList[^1];
         _contenderList.Remove(tempContenderPrefab);
-        Destroy(tempContenderPrefab);
+        Destroy(tempContenderPrefab.gameObject);
         increaseButton.interactable = true;
         contenderCounter.text = _contenderList.Count.ToString();
     }

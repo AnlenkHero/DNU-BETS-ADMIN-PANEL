@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Libs.Models;
 using Libs.Models.RequestModels;
 using Newtonsoft.Json;
@@ -82,9 +83,64 @@ namespace Libs.Repositories
                 });
                return promise;
             }
+            //TODO STILL NOT WORKING PROPERLY. IMAGE IS DISAPPEARING WHEN EDIT. 
+            GetMatchById(matchId).Then(match =>
+            {
+                matchToUpdate.ImageUrl = match.ImageUrl;
+                RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
+                    .Catch(error => promise.Reject(error));
+            });
             return RestClient.Put(url, matchToUpdate);
         }
         
+        public static Promise<Match> GetMatchById(string matchId)
+        {
+            return new Promise<Match>((resolve, reject) =>
+            {
+                RestClient.Get($"{FirebaseDbUrl}matches/{matchId}.json").Then(response =>
+                {
+                    var rawMatch = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Text);
+
+                    if (rawMatch == null || !rawMatch.Any())
+                    {
+                        reject(new Exception("Match not found"));
+                        return;
+                    }
+
+                    Match match = new Match
+                    {
+                        Id = matchId,
+                        ImageUrl = rawMatch["ImageUrl"] as string,
+                        MatchTitle = rawMatch["MatchTitle"] as string,
+                        IsBettingAvailable = (bool)rawMatch["IsBettingAvailable"],
+                        FinishedDateUtc = rawMatch.TryGetValue("FinishedDateUtc", out var finishedDate)
+                            ? finishedDate as string
+                            : null,
+                        Contestants = new List<Contestant>()
+                    };
+
+                    if (rawMatch.ContainsKey("Contestants"))
+                    {
+                        string contestantsString = Convert.ToString(rawMatch["Contestants"]);
+                        List<Dictionary<string, object>> rawContestants = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
+                        for (int i = 0; i < rawContestants.Count; i++)
+                        {
+                            var contestantDict = rawContestants[i];
+                            match.Contestants.Add(new Contestant
+                            {
+                                Id = i.ToString(),
+                                Name = contestantDict["Name"] as string,
+                                Coefficient = Convert.ToDouble(contestantDict["Coefficient"]),
+                                Winner = (bool)contestantDict["Winner"]
+                            });
+                        }
+                    }
+
+                    resolve(match);
+                }).Catch(error => { reject(new Exception($"Error retrieving match by ID: {error.Message}")); });
+            });
+        }
+
         public static Promise<List<Match>> GetAllMatches()
         {
             return new Promise<List<Match>>((resolve, reject) =>

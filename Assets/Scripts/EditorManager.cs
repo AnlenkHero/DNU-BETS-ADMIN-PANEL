@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -9,10 +10,13 @@ using Newtonsoft.Json;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class EditorManager : MonoBehaviour
 {
+    [SerializeField] private Button backButton;
     [SerializeField] private Button saveButton;
     [SerializeField] private Button deleteButton;
     [SerializeField] private Transform contestantListParent;
@@ -20,6 +24,7 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private TMP_InputField matchTitle;
     [SerializeField] private Toggle bettingAvailableToggle;
     [SerializeField] private InfoPanel infoPanel;
+    [SerializeField] private ContestantListManager contestantListManager;
     private bool imageUpdated;
     
     private static readonly CultureInfo DefaultDateCulture = CultureInfo.InvariantCulture;
@@ -31,11 +36,24 @@ public class EditorManager : MonoBehaviour
 
     private void Awake()
     {
+        if(MatchesCache.selectedMatchID!=null)
+            SetData(MatchesCache.selectedMatchID);
         CheckDeleteButtonConditions();
+        backButton.onClick.AddListener(BackToMatchChooseScene);
         saveButton.onClick.AddListener(SaveMatch);
         deleteButton.onClick.AddListener(DeleteMatch);
     }
-        
+
+    private void SetData(string id)
+    {
+        MatchesRepository.GetMatchById(id).Then(match =>
+        {
+            contestantListManager.SetData(match);
+            matchTitle.text = match.MatchTitle;
+            bettingAvailableToggle.isOn = match.IsBettingAvailable;
+            StartCoroutine(LoadImage(match.ImageUrl));
+        } );
+    }
     private void SaveMatch()
     {
         saveButton.interactable = false;
@@ -139,8 +157,8 @@ public class EditorManager : MonoBehaviour
     {
         MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ =>
         {
-            infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Hide",
-                $"Deleted match ID: {MatchesCache.selectedMatchID}");
+            infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Back to match chooser",
+                $"Deleted match ID: {MatchesCache.selectedMatchID}",BackToMatchChooseScene);
             MatchesCache.selectedMatchID = null;
         }).Catch(error =>
             infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!",
@@ -151,5 +169,28 @@ public class EditorManager : MonoBehaviour
     {
         if (MatchesCache.selectedMatchID == null)
             deleteButton.interactable = false;
+    }
+    
+    IEnumerator LoadImage(string path)
+    {
+        UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(path);
+        {
+            yield return uwr.SendWebRequest();
+            if (uwr.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"Failed to get image from file browser {uwr.error}");
+            }
+            else
+            {
+                var uwrTexture = DownloadHandlerTexture.GetContent(uwr);
+                matchImage.texture = uwrTexture;
+            }
+        }
+    }
+
+    private void BackToMatchChooseScene()
+    {
+        SceneManager.LoadScene("MatchChooseScene");
+        MatchesCache.selectedMatchID = null;
     }
 }
