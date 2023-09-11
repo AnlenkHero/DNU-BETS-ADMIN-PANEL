@@ -64,12 +64,19 @@ namespace Libs.Repositories
         {
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
             var promise = new Promise<ResponseHelper>();
+            string validationMessage = ValidateMatch(matchToUpdate);
+
+            if (validationMessage != null)
+            {
+                promise.Reject(new Exception(validationMessage));
+                return promise;
+            }
             
             if (imageToChange != null)
             {
-               UploadImage(imageToChange,$"{Guid.NewGuid()}.png").Then(imageToChange =>
+               UploadImage(imageToChange,$"{Guid.NewGuid()}.png").Then(image =>
                 {
-                    matchToUpdate.ImageUrl = imageToChange;
+                    matchToUpdate.ImageUrl = image;
                     RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
                         .Catch(error => promise.Reject(error));
                 });

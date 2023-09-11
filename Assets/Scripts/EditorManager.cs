@@ -19,9 +19,7 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private RawImage matchImage;
     [SerializeField] private TMP_InputField matchTitle;
     [SerializeField] private Toggle bettingAvailableToggle;
-    [SerializeField] private GameObject successPanel;
-    [SerializeField] private GameObject failPanel;
-    [SerializeField] private TextMeshProUGUI failText;//low lvl lazy TODO REFACTOR POP UP.
+    [SerializeField] private InfoPanel infoPanel;
     private bool imageUpdated;
     
     private static readonly CultureInfo DefaultDateCulture = CultureInfo.InvariantCulture;
@@ -61,14 +59,13 @@ public class EditorManager : MonoBehaviour
             {
                 MatchesCache.selectedMatchID = newMatchId;
 
-                successPanel.SetActive(true);
+                infoPanel.ShowPanel(Color.green, "Match saved successfully!","Edit",$"Match ID: {newMatchId}");
 
                 MatchesCache.matches.Add(GetMatchModel(newMatchId, matchToCreate));
                 
             }).Catch(error =>
             {
-                failText.text = error.Message;
-                failPanel.SetActive(true);
+                infoPanel.ShowPanel(Color.red, "Match was not created!","Try again",error.Message);
             }).Finally(() =>
             {
                 saveButton.interactable = true;
@@ -81,15 +78,14 @@ public class EditorManager : MonoBehaviour
             {
                 var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
 
-                successPanel.SetActive(true);
+                infoPanel.ShowPanel(Color.green, "Match was edited successfully!","Edit again",$"Edited match ID: {MatchesCache.selectedMatchID}");
 
                 MatchesCache.matches.Remove(MatchesCache.matches.First(x => x.Id == MatchesCache.selectedMatchID));
                 MatchesCache.matches.Add(matchModel);
                 //TODO LOW LVL OPTIMIZE!!!
             }).Catch(error =>
             {
-                failText.text = error.Message;
-                failPanel.SetActive(true);
+                infoPanel.ShowPanel(Color.red, "Match was not edited!","Try again",error.Message);
             }).Finally(() => saveButton.interactable = true);
         }
     }
@@ -141,7 +137,14 @@ public class EditorManager : MonoBehaviour
 
     private void DeleteMatch()
     {
-        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID);////TODO MOVE TO OTHER SCENE .Then(MatchesCache.selectedMatchID = null;).Catch();
+        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ =>
+        {
+            infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Hide",
+                $"Deleted match ID: {MatchesCache.selectedMatchID}");
+            MatchesCache.selectedMatchID = null;
+        }).Catch(error =>
+            infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!",
+                "Try again", error.Message)); ////TODO MOVE TO OTHER SCENE .Then(MatchesCache.selectedMatchID = null;).Catch();
     }
 
     private void CheckDeleteButtonConditions()
