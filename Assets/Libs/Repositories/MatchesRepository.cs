@@ -31,9 +31,8 @@ namespace Libs.Repositories
             {
                 match.ImageUrl = imageUrl;
 
-                RestClient.Post($"{FirebaseDbUrl}matches.json", match).Then(response => 
-                { 
-                    
+                RestClient.Post($"{FirebaseDbUrl}matches.json", match).Then(response =>
+                {
                     var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
 
                     if (jsonResponse != null && jsonResponse.TryGetValue("name", out string newMatchId))
@@ -42,9 +41,9 @@ namespace Libs.Repositories
                     }
                     else
                     {
-                        promise.Reject(new Exception("Match id is not returned"));        
+                        promise.Reject(new Exception("Match id is not returned"));
                     }
-                }).Catch(error =>{promise.Reject(error);});
+                }).Catch(error => { promise.Reject(error); });
             }).Catch(error => { promise.Reject(error); });
 
             return promise;
@@ -54,14 +53,19 @@ namespace Libs.Repositories
         {
             if (matchId == null)
             {
-                var promise = new Promise<ResponseHelper>(); 
+                var promise = new Promise<ResponseHelper>();
                 promise.Reject(new Exception("Id is null"));
                 return promise;
             }
+
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            var match = MatchesCache.matches.First(match => match.Id == matchId);
+            DeleteImage(match.ImageUrl);
             return RestClient.Delete(url);
         }
-        public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,Texture2D imageToChange = null,string imageURL = null)
+
+        public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,
+            Texture2D imageToChange = null, string imageURL = null)
         {
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
             var promise = new Promise<ResponseHelper>();
@@ -72,17 +76,19 @@ namespace Libs.Repositories
                 promise.Reject(new Exception(validationMessage));
                 return promise;
             }
-            
+
             if (imageToChange != null)
             {
-               UploadImage(imageToChange,$"{Guid.NewGuid()}.png").Then(image =>
+                DeleteImage(imageURL);
+                UploadImage(imageToChange, $"{Guid.NewGuid()}.png").Then(image =>
                 {
                     matchToUpdate.ImageUrl = image;
                     RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
                         .Catch(error => promise.Reject(error));
                 });
-               return promise;
+                return promise;
             }
+
             if (String.IsNullOrWhiteSpace(imageURL))
             {
                 promise.Reject(new Exception("image url not provided"));
@@ -96,7 +102,7 @@ namespace Libs.Repositories
 
             return RestClient.Put(url, matchToUpdate);
         }
-        
+
         public static Promise<Match> GetMatchById(string matchId)
         {
             return new Promise<Match>((resolve, reject) =>
@@ -126,7 +132,8 @@ namespace Libs.Repositories
                     if (rawMatch.TryGetValue("Contestants", out var value))
                     {
                         string contestantsString = Convert.ToString(value);
-                        List<Dictionary<string, object>> rawContestants = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
+                        List<Dictionary<string, object>> rawContestants =
+                            JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
                         for (int i = 0; i < rawContestants.Count; i++)
                         {
                             var contestantDict = rawContestants[i];
@@ -151,7 +158,8 @@ namespace Libs.Repositories
             {
                 RestClient.Get($"{FirebaseDbUrl}matches.json").Then(response =>
                 {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string,object>>>(response.Text);
+                    var rawMatches =
+                        JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
 
                     List<Match> matches = new List<Match>();
                     foreach (var rawMatchKey in rawMatches.Keys)
@@ -173,7 +181,8 @@ namespace Libs.Repositories
                         if (rawMatch.TryGetValue("Contestants", out var value))
                         {
                             string contestantsString = Convert.ToString(value);
-                            List<Dictionary<string, object>> rawContestants = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
+                            List<Dictionary<string, object>> rawContestants =
+                                JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
                             for (int i = 0; i < rawContestants.Count; i++)
                             {
                                 var contestantDict = rawContestants[i];
@@ -195,7 +204,7 @@ namespace Libs.Repositories
             });
         }
 
-        
+
         private static Promise<string> UploadImage(Texture2D imageToUpload, string fileName)
         {
             return new Promise<string>((resolve, reject) =>
@@ -224,6 +233,30 @@ namespace Libs.Repositories
                 }).Catch(error => { reject(new Exception($"Error uploading image: {error.Message}")); });
             });
         }
+
+        public static IPromise<ResponseHelper> DeleteImage(string imageUrl)
+        {
+            return new Promise<ResponseHelper>((resolve, reject) =>
+            {
+                var uri = new Uri(imageUrl);
+                string fileName = System.Web.HttpUtility.UrlDecode(uri.Segments.Last());
+                
+                string deleteEndpoint = $"{FirebaseStorageURL}/o/{fileName}";
+                
+                RestClient.Request(new RequestHelper
+                    {
+                        Uri = deleteEndpoint,
+                        Method = "DELETE",
+                        Headers = new Dictionary<string, string>
+                        {
+                            { "Content-Type", "image/png" }
+                        },
+                    })
+                    .Then(resolve)
+                    .Catch(error => { reject(new Exception($"Failed to delete image: {error.Message}")); });
+            });
+        }
+
 
         private static Promise<string> GetDownloadURL(string fileName)
         {
