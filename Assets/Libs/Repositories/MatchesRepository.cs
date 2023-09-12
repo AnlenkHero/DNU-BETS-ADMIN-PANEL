@@ -61,7 +61,7 @@ namespace Libs.Repositories
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
             return RestClient.Delete(url);
         }
-        public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,Texture2D imageToChange = null)
+        public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,Texture2D imageToChange = null,string imageURL = null)
         {
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
             var promise = new Promise<ResponseHelper>();
@@ -83,13 +83,17 @@ namespace Libs.Repositories
                 });
                return promise;
             }
-            //TODO STILL NOT WORKING PROPERLY. IMAGE IS DISAPPEARING WHEN EDIT. 
-            GetMatchById(matchId).Then(match =>
+            if (String.IsNullOrWhiteSpace(imageURL))
             {
-                matchToUpdate.ImageUrl = match.ImageUrl;
-                RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
-                    .Catch(error => promise.Reject(error));
-            });
+                promise.Reject(new Exception("image url not provided"));
+                return promise;
+            }
+
+            if (imageToChange == null && String.IsNullOrWhiteSpace(imageURL) != true)
+            {
+                matchToUpdate.ImageUrl = imageURL;
+            }
+
             return RestClient.Put(url, matchToUpdate);
         }
         
@@ -119,9 +123,9 @@ namespace Libs.Repositories
                         Contestants = new List<Contestant>()
                     };
 
-                    if (rawMatch.ContainsKey("Contestants"))
+                    if (rawMatch.TryGetValue("Contestants", out var value))
                     {
-                        string contestantsString = Convert.ToString(rawMatch["Contestants"]);
+                        string contestantsString = Convert.ToString(value);
                         List<Dictionary<string, object>> rawContestants = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
                         for (int i = 0; i < rawContestants.Count; i++)
                         {
@@ -166,9 +170,9 @@ namespace Libs.Repositories
                             Contestants = new List<Contestant>()
                         };
 
-                        if (rawMatch.ContainsKey("Contestants"))
+                        if (rawMatch.TryGetValue("Contestants", out var value))
                         {
-                            string contestantsString = Convert.ToString(rawMatch["Contestants"]);
+                            string contestantsString = Convert.ToString(value);
                             List<Dictionary<string, object>> rawContestants = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
                             for (int i = 0; i < rawContestants.Count; i++)
                             {
@@ -211,7 +215,7 @@ namespace Libs.Repositories
                     Headers = headers
                 };
 
-                RestClient.Request(requestData).Then(response =>
+                RestClient.Request(requestData).Then(_ =>
                 {
                     GetDownloadURL(fileName).Then(resolve).Catch(error =>
                     {
