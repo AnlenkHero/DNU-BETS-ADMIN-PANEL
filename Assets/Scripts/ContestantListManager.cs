@@ -2,81 +2,101 @@ using System.Collections.Generic;
 using Libs.Models;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class ContestantListManager : MonoBehaviour
 {
+    private const int MinContestants = 2;
+    private const int MaxContestants = 6;
+
     [SerializeField] private Button decreaseButton;
     [SerializeField] private Button increaseButton;
-    [SerializeField] private TextMeshProUGUI contenderCounter;
-    [FormerlySerializedAs("contenderEditorPrefab")]
+    [SerializeField] private TextMeshProUGUI contestantCountText;
     [SerializeField] private ContestantFormView contestantEditorPrefab;
-    [FormerlySerializedAs("contenderEditorPrefabParent")]
-    [SerializeField] private Transform contestantEditorPrefabParent;
-    
-    private List<ContestantFormView> _contenderList = new ();
+    [SerializeField] private Transform contestantEditorParent;
+    [SerializeField] private ToggleGroup winnerToggleGroup;
+
+    private readonly List<ContestantFormView> contestantViews = new ();
 
     private void Awake()
     {
-        decreaseButton.onClick.AddListener(Decrease);
-        increaseButton.onClick.AddListener(Increase);
+        RegisterButtonEvents();
     }
 
     private void Start()
     {
-        if (MatchesCache.selectedMatchID == null)
+        if (IsNewMatch())
         {
-            for (int i = 0; i < 2; i++)
-            {
-                var tempContenderPrefab = Instantiate(contestantEditorPrefab, contestantEditorPrefabParent);
-                _contenderList.Add(tempContenderPrefab);
-            }
-
-            decreaseButton.interactable = false;
-            contenderCounter.text = _contenderList.Count.ToString();
+            InitializeDefaultContestants();
+            UpdateButtonInteractivity();
         }
     }
-
+    
     public void SetData(Match match)
     {
         foreach (var contestant in match.Contestants)
         {
-            var tempContenderPrefab = Instantiate(contestantEditorPrefab, contestantEditorPrefabParent);
-            _contenderList.Add(tempContenderPrefab);
-            tempContenderPrefab.SetData(contestant);
+            AddContestantView(contestant);
         }
-        contenderCounter.text = _contenderList.Count.ToString();
-        if(_contenderList.Count <= 2)
-            decreaseButton.interactable = false;
-        else if (_contenderList.Count >= 6)
-            increaseButton.interactable = false;
+        UpdateButtonInteractivity();
     }
 
-    private void Decrease()
+    private void RegisterButtonEvents()
     {
-        if (_contenderList.Count <= 2) 
-        {
-            decreaseButton.interactable = false;
-            return;
-        }
-        var tempContenderPrefab = _contenderList[^1];
-        _contenderList.Remove(tempContenderPrefab);
-        Destroy(tempContenderPrefab.gameObject);
-        increaseButton.interactable = true;
-        contenderCounter.text = _contenderList.Count.ToString();
+        decreaseButton.onClick.AddListener(RemoveLastContestantView);
+        increaseButton.onClick.AddListener(AddNewContestantView);
     }
 
-    private void Increase()
-    {     
-        if (_contenderList.Count >= 6) 
-        { 
-            increaseButton.interactable = false;
-            return;
+    private bool IsNewMatch()
+    {
+        return MatchesCache.selectedMatchID == null;
+    }
+
+    private void InitializeDefaultContestants()
+    {
+        for (int i = 0; i < MinContestants; i++)
+        {
+            AddNewContestantView();
         }
-        var tempContenderPrefab = Instantiate(contestantEditorPrefab,contestantEditorPrefabParent);
-        _contenderList.Add(tempContenderPrefab);
-        decreaseButton.interactable = true;
-        contenderCounter.text = _contenderList.Count.ToString();
+    }
+
+    private void UpdateButtonInteractivity()
+    {
+        decreaseButton.interactable = contestantViews.Count > MinContestants;
+        increaseButton.interactable = contestantViews.Count < MaxContestants;
+        contestantCountText.text = contestantViews.Count.ToString();
+    }
+
+    private void AddContestantView(Contestant contestant = null)
+    {
+        var newContestantView = Instantiate(contestantEditorPrefab, contestantEditorParent);
+        newContestantView.WinnerToggleGroup = winnerToggleGroup;
+
+        if (contestant != null)
+        {
+            newContestantView.SetData(contestant);
+        }
+
+        contestantViews.Add(newContestantView);
+        UpdateButtonInteractivity();
+    }
+
+    private void RemoveLastContestantView()
+    {
+        if (contestantViews.Count > MinContestants)
+        {
+            var lastContestantView = contestantViews[^1];
+            contestantViews.Remove(lastContestantView);
+            Destroy(lastContestantView.gameObject);
+            UpdateButtonInteractivity();
+        }
+    }
+
+    private void AddNewContestantView()
+    {
+        if (contestantViews.Count < MaxContestants)
+        {
+            AddContestantView();
+        }
     }
 }

@@ -148,6 +148,21 @@ PrefabInstance:
       objectReference: {fileID: 800110547}
     - target: {fileID: 487915986311251770, guid: c18eb03ee9765884b831377d96021281,
         type: 3}
+      propertyPath: winnerToggleGroup
+      value: 
+      objectReference: {fileID: 1662777816}
+    - target: {fileID: 487915986311251770, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: contestantCountText
+      value: 
+      objectReference: {fileID: 1717223071}
+    - target: {fileID: 487915986311251770, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: contestantEditorParent
+      value: 
+      objectReference: {fileID: 1172682167}
+    - target: {fileID: 487915986311251770, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
       propertyPath: contestantEditorPrefab
       value: 
       objectReference: {fileID: 3823644409592106400, guid: f04a3f3641fbb2541beae838ebb693a0,
@@ -337,11 +352,52 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 125.3999
       objectReference: {fileID: 0}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 42
+      objectReference: {fileID: 0}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 9d51afe569d63164f8109eb6a47aa2a4,
+        type: 2}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_fontStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_fontSizeBase
+      value: 42
+      objectReference: {fileID: 0}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 1276031640440433849, guid: 9d51afe569d63164f8109eb6a47aa2a4,
+        type: 2}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7711335731663298944, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 8889993164648196820, guid: c18eb03ee9765884b831377d96021281, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3563030574176229124, guid: c18eb03ee9765884b831377d96021281,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1662777816}
   m_SourcePrefab: {fileID: 100100000, guid: c18eb03ee9765884b831377d96021281, type: 3}
 --- !u!1 &178406423
 GameObject:
@@ -1653,6 +1709,37 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60050e61425cd7f4f9e8faabf02a202c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1 &1662777815 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3563030574176229124, guid: c18eb03ee9765884b831377d96021281,
+    type: 3}
+  m_PrefabInstance: {fileID: 21674285}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1662777816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1662777815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fafe2cfe61f6974895a912c3755e8f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AllowSwitchOff: 1
+--- !u!114 &1717223071 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 490908125510860629, guid: c18eb03ee9765884b831377d96021281,
+    type: 3}
+  m_PrefabInstance: {fileID: 21674285}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &1979616653 stripped

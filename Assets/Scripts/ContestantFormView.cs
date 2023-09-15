@@ -8,9 +8,11 @@ public class ContestantFormView : MonoBehaviour
     [SerializeField] private TMP_InputField nameField;
     [SerializeField] private TMP_InputField coefficientField;
     [SerializeField] private Toggle isWinnerToggle;
+    private ToggleGroup winnerToggleGroup;
     public string Name => nameField.text;
     public double Coefficient => double.TryParse(coefficientField.text,out double value) ? value : -1;
     public bool IsWinner => isWinnerToggle.isOn;
+    public ToggleGroup WinnerToggleGroup { set => isWinnerToggle.group = value; }
 
     public void SetData(Contestant contestant = null)
     {
