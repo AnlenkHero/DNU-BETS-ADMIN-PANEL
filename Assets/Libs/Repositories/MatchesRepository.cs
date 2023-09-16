@@ -152,7 +152,7 @@ namespace Libs.Repositories
             });
         }
 
-        public static Promise<List<Match>> GetAllMatches()
+        public static Promise<List<Match>> GetAllMatches(bool bettingAvailable = false, bool isWinner = false)
         {
             return new Promise<List<Match>>((resolve, reject) =>
             {
@@ -166,6 +166,32 @@ namespace Libs.Repositories
                     {
                         var rawMatch = rawMatches[rawMatchKey];
 
+                        if (bettingAvailable && !(bool)rawMatch["IsBettingAvailable"])
+                            continue;
+
+                        if (isWinner)
+                        {
+                            bool hasWinner = false;
+                            if (rawMatch.TryGetValue("Contestants", out var value))
+                            {
+                                string contestantsString = Convert.ToString(value);
+                                List<Dictionary<string, object>> rawContestants =
+                                    JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
+
+                                foreach (var contestantDict in rawContestants)
+                                {
+                                    if ((bool)contestantDict["Winner"])
+                                    {
+                                        hasWinner = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (hasWinner)
+                                continue;
+                        }
+
                         Match match = new Match
                         {
                             Id = rawMatchKey,
@@ -178,9 +204,9 @@ namespace Libs.Repositories
                             Contestants = new List<Contestant>()
                         };
 
-                        if (rawMatch.TryGetValue("Contestants", out var value))
+                        if (rawMatch.TryGetValue("Contestants", out var contestantsValue))
                         {
-                            string contestantsString = Convert.ToString(value);
+                            string contestantsString = Convert.ToString(contestantsValue);
                             List<Dictionary<string, object>> rawContestants =
                                 JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
                             for (int i = 0; i < rawContestants.Count; i++)
@@ -200,7 +226,10 @@ namespace Libs.Repositories
                     }
 
                     resolve(matches);
-                }).Catch(error => { reject(new Exception($"Error retrieving matches: {error.Message}")); });
+                }).Catch(error =>
+                {
+                    reject(new Exception($"Error retrieving matches: {error.Message}"));
+                });
             });
         }
 
@@ -240,9 +269,9 @@ namespace Libs.Repositories
             {
                 var uri = new Uri(imageUrl);
                 string fileName = System.Web.HttpUtility.UrlDecode(uri.Segments.Last());
-                
+
                 string deleteEndpoint = $"{FirebaseStorageURL}/o/{fileName}";
-                
+
                 RestClient.Request(new RequestHelper
                     {
                         Uri = deleteEndpoint,
