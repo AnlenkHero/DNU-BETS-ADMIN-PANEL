@@ -59,8 +59,6 @@ namespace Libs.Repositories
             }
 
             string url = $"{FirebaseDbUrl}matches/{matchId}.json";
-            var match = MatchesCache.matches.First(match => match.Id == matchId);
-            DeleteImage(match.ImageUrl);
             return RestClient.Delete(url);
         }
 

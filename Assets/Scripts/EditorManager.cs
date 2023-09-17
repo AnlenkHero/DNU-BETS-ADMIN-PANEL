@@ -149,6 +149,7 @@ public class EditorManager : MonoBehaviour
     private void SaveMatch()
     {
         saveButton.interactable = false;
+        backButton.interactable = false;
 
         ContestantFormView[] contestantViews = contestantListParent.GetComponentsInChildren<ContestantFormView>();
         var matchToCreate = new MatchRequest()
@@ -178,6 +179,7 @@ public class EditorManager : MonoBehaviour
                 })
                 .Finally(() =>
                 {
+                    backButton.interactable = true;
                     saveButton.interactable = true;
                     deleteButton.interactable = true;
                 });
@@ -199,20 +201,28 @@ public class EditorManager : MonoBehaviour
                 }).Catch(error =>
             {
                 infoPanel.ShowPanel(Color.red, "Match was not edited!", "Try again", error.Message);
-            }).Finally(() => saveButton.interactable = true);
+            }).Finally(() =>
+            {
+                saveButton.interactable = true;
+                backButton.interactable = true;
+            });
         }
     }
 
     private void DeleteMatch()
     {
+        backButton.interactable = false;
         MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ =>
         {
+            var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
+            MatchesRepository.DeleteImage(match.ImageUrl);
             infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Back to match chooser",
                 $"Deleted match ID: {MatchesCache.selectedMatchID}", BackToMatchChooseScene);
             MatchesCache.selectedMatchID = null;
         }).Catch(error =>
             infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!",
-                "Try again", error.Message));
+                "Try again", error.Message))
+            .Finally(() => backButton.interactable = true);
     }
 
     private void BackToMatchChooseScene()
