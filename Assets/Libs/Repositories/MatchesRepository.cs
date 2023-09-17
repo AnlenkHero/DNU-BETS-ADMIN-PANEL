@@ -152,7 +152,7 @@ namespace Libs.Repositories
             });
         }
 
-        public static Promise<List<Match>> GetAllMatches(bool bettingAvailable = false, bool isWinner = false)
+        public static Promise<List<Match>> GetAllMatches(bool isBettingAvailableFilter = false, bool isWinnerFilter = false)
         {
             return new Promise<List<Match>>((resolve, reject) =>
             {
@@ -166,10 +166,10 @@ namespace Libs.Repositories
                     {
                         var rawMatch = rawMatches[rawMatchKey];
 
-                        if (bettingAvailable && !(bool)rawMatch["IsBettingAvailable"])
+                        if (isBettingAvailableFilter && !(bool)rawMatch["IsBettingAvailable"])
                             continue;
 
-                        if (isWinner)
+                        if (isWinnerFilter)
                         {
                             bool hasWinner = false;
                             if (rawMatch.TryGetValue("Contestants", out var value))
