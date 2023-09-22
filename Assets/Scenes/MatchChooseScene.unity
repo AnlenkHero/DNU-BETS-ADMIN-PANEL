@@ -454,7 +454,17 @@ PrefabInstance:
     - target: {fileID: 4234593368219503490, guid: b09d0f93ad1cf73468e74b48c5396825,
         type: 3}
       propertyPath: m_fontSize
-      value: 108.65
+      value: 104.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234593368219503490, guid: b09d0f93ad1cf73468e74b48c5396825,
+        type: 3}
+      propertyPath: m_margin.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234593368219503490, guid: b09d0f93ad1cf73468e74b48c5396825,
+        type: 3}
+      propertyPath: m_margin.z
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6066440533502175316, guid: b09d0f93ad1cf73468e74b48c5396825,
         type: 3}
@@ -468,18 +478,34 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7657922005455640263, guid: b09d0f93ad1cf73468e74b48c5396825,
         type: 3}
+      propertyPath: m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7657922005455640263, guid: b09d0f93ad1cf73468e74b48c5396825,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 3b5f3cb7f5dbb0e46ac3ba9501b33879,
+        type: 3}
+    - target: {fileID: 7657922005455640263, guid: b09d0f93ad1cf73468e74b48c5396825,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7657922005455640263, guid: b09d0f93ad1cf73468e74b48c5396825,
+        type: 3}
       propertyPath: m_Color.b
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7657922005455640263, guid: b09d0f93ad1cf73468e74b48c5396825,
         type: 3}
       propertyPath: m_Color.g
-      value: 1
+      value: 0.6313726
       objectReference: {fileID: 0}
     - target: {fileID: 7657922005455640263, guid: b09d0f93ad1cf73468e74b48c5396825,
         type: 3}
       propertyPath: m_Color.r
-      value: 1
+      value: 0.76862746
       objectReference: {fileID: 0}
     - target: {fileID: 7665624146922227206, guid: b09d0f93ad1cf73468e74b48c5396825,
         type: 3}
