@@ -150,87 +150,83 @@ namespace Libs.Repositories
             });
         }
 
-        public static Promise<List<Match>> GetAllMatches(bool isBettingAvailableFilter = false, bool isWinnerFilter = false)
+        public static Promise<List<Match>> GetNotFinishedMatches()
         {
             return new Promise<List<Match>>((resolve, reject) =>
             {
-                RestClient.Get($"{FirebaseDbUrl}matches.json").Then(response =>
+                string queryUrl = $"{FirebaseDbUrl}matches.json?orderBy=\"FinishedDateUtc\"&equalTo=\"\"";
+
+                RestClient.Get(queryUrl).Then(response =>
                 {
-                    var rawMatches =
-                        JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
-
-                    List<Match> matches = new List<Match>();
-                    foreach (var rawMatchKey in rawMatches.Keys)
-                    {
-                        var rawMatch = rawMatches[rawMatchKey];
-
-                        if (isBettingAvailableFilter && !(bool)rawMatch["IsBettingAvailable"])
-                            continue;
-
-                        if (isWinnerFilter)
-                        {
-                            bool hasWinner = false;
-                            if (rawMatch.TryGetValue("Contestants", out var value))
-                            {
-                                string contestantsString = Convert.ToString(value);
-                                List<Dictionary<string, object>> rawContestants =
-                                    JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
-
-                                foreach (var contestantDict in rawContestants)
-                                {
-                                    if ((bool)contestantDict["Winner"])
-                                    {
-                                        hasWinner = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (hasWinner)
-                                continue;
-                        }
-
-                        Match match = new Match
-                        {
-                            Id = rawMatchKey,
-                            ImageUrl = rawMatch["ImageUrl"] as string,
-                            MatchTitle = rawMatch["MatchTitle"] as string,
-                            IsBettingAvailable = (bool)rawMatch["IsBettingAvailable"],
-                            FinishedDateUtc = rawMatch.TryGetValue("FinishedDateUtc", out var finishedDate)
-                                ? finishedDate as string
-                                : null,
-                            Contestants = new List<Contestant>()
-                        };
-
-                        if (rawMatch.TryGetValue("Contestants", out var contestantsValue))
-                        {
-                            string contestantsString = Convert.ToString(contestantsValue);
-                            List<Dictionary<string, object>> rawContestants =
-                                JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
-                            for (int i = 0; i < rawContestants.Count; i++)
-                            {
-                                var contestantDict = rawContestants[i];
-                                match.Contestants.Add(new Contestant
-                                {
-                                    Id = i.ToString(),
-                                    Name = contestantDict["Name"] as string,
-                                    Coefficient = Convert.ToDouble(contestantDict["Coefficient"]),
-                                    Winner = (bool)contestantDict["Winner"]
-                                });
-                            }
-                        }
-
-                        matches.Add(match);
-                    }
-
+                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
+                    List<Match> matches = ExtractMatchesFromRawData(rawMatches);
                     resolve(matches);
                 }).Catch(error =>
                 {
-                    reject(new Exception($"Error retrieving matches: {error.Message}"));
+                    reject(new Exception($"Error retrieving not finished matches: {error.Message}"));
                 });
             });
         }
+        public static Promise<List<Match>> GetBettingAvailableMatches()
+        {
+            return new Promise<List<Match>>((resolve, reject) =>
+            {
+                string queryUrl = $"{FirebaseDbUrl}matches.json?orderBy=\"IsBettingAvailable\"&equalTo=true";
+                Debug.Log(queryUrl);
 
+                RestClient.Get(queryUrl).Then(response =>
+                {
+                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
+                    List<Match> matches = ExtractMatchesFromRawData(rawMatches);
+                    resolve(matches);
+                }).Catch(error =>
+                {
+                    reject(new Exception($"Error retrieving betting available matches: {error.Message}"));
+                });
+            });
+        }
+        private static List<Match> ExtractMatchesFromRawData(Dictionary<string, Dictionary<string, object>> rawMatches)
+        {
+            List<Match> matches = new List<Match>();
+            foreach (var rawMatchKey in rawMatches.Keys)
+            {
+                var rawMatch = rawMatches[rawMatchKey];
+
+                Match match = new Match
+                {
+                    Id = rawMatchKey,
+                    ImageUrl = rawMatch["ImageUrl"] as string,
+                    MatchTitle = rawMatch["MatchTitle"] as string,
+                    IsBettingAvailable = (bool)rawMatch["IsBettingAvailable"],
+                    FinishedDateUtc = rawMatch.TryGetValue("FinishedDateUtc", out var finishedDate)
+                        ? finishedDate as string
+                        : null,
+                    Contestants = new List<Contestant>()
+                };
+
+                if (rawMatch.TryGetValue("Contestants", out var contestantsValue))
+                {
+                    string contestantsString = Convert.ToString(contestantsValue);
+                    List<Dictionary<string, object>> rawContestants =
+                        JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
+                    for (int i = 0; i < rawContestants.Count; i++)
+                    {
+                        var contestantDict = rawContestants[i];
+                        match.Contestants.Add(new Contestant
+                        {
+                            Id = i.ToString(),
+                            Name = contestantDict["Name"] as string,
+                            Coefficient = Convert.ToDouble(contestantDict["Coefficient"]),
+                            Winner = (bool)contestantDict["Winner"]
+                        });
+                    }
+                }
+
+                matches.Add(match);
+            }
+            return matches;
+        }
+        
 
         private static Promise<string> UploadImage(Texture2D imageToUpload, string fileName)
         {

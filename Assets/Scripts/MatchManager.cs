@@ -16,7 +16,7 @@ public class MatchManager : MonoBehaviour
 
    private void Start()
    {
-      MatchesRepository.GetAllMatches(false,true).Then(matches =>
+      MatchesRepository.GetNotFinishedMatches().Then(matches =>
          {
             matchList = matches;
             MatchesCache.matches = matchList;

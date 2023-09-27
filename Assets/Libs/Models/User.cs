@@ -4,9 +4,8 @@ namespace Libs.Models
     [System.Serializable]
     public class User
     {
-        public string Token;
-        public string UserName;
-        public decimal Balance;
-        public List<Bet> Bets;
+        public string userId;
+        public string userName;
+        public double Balance;
     }
 }
