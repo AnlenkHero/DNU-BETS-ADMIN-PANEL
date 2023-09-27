@@ -46,20 +46,13 @@ public class EditorManager : MonoBehaviour
     {
         InitializeData();
         InitializeListeners();
-        InitializeBets();
         CheckDeleteButtonConditions();
     }
 
     #endregion
 
     #region Initializers
-
-    private void InitializeBets()
-    {
-        if (MatchesCache.selectedMatchID != null)
-            BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then((bets => BetsCache.bets = bets));
-        else BetsCache.bets = null;
-    }
+    
     private void InitializeData()
     {
         if (MatchesCache.selectedMatchID != null)
@@ -199,15 +192,21 @@ public class EditorManager : MonoBehaviour
                 _ =>
                 {
                     var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
-                    
-                    if (matchToCreate.Contestants.Any(x => x.Winner) && BetsCache.bets != null)
-                    {
-                        var contestant = matchModel.Contestants.First(x => x.Winner );
-                        foreach (var bet in BetsCache.bets.Where(bet => bet.ContestantId == contestant.Id))
+                    BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(
+                        bets =>
                         {
-                            UserRepository.UpdateUserBalanceAfterBet(bet.UserId,bet.BetAmount,contestant.Coefficient);
-                        }
-                    }
+                            if (matchToCreate.Contestants.Any(x => x.Winner) && bets != null)
+                            {
+                                var contestant = matchModel.Contestants.First(x => x.Winner );
+                                foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id))
+                                {
+                                    UserRepository.UpdateUserBalanceAfterBet(bet.UserId,bet.BetAmount,contestant.Coefficient);
+                                }
+                            }
+                        }).Catch(exception =>
+                    {
+                        Debug.Log(exception.Message);
+                    });
                     infoPanel.ShowPanel(Color.green, "Match was edited successfully!", "Edit again",
                         $"Edited match ID: {MatchesCache.selectedMatchID}");
 
