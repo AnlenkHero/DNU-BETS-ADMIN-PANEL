@@ -1,4 +1,6 @@
-﻿using Libs.Models;
+﻿using System;
+using System.Globalization;
+using Libs.Models;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +12,7 @@ public class ContestantFormView : MonoBehaviour
     [SerializeField] private Toggle isWinnerToggle;
     private ToggleGroup winnerToggleGroup;
     public string Name => nameField.text;
-    public double Coefficient => double.TryParse(coefficientField.text,out double value) ? value : -1;
+    public double Coefficient => double.TryParse(coefficientField.text,NumberStyles.Any, CultureInfo.InvariantCulture,out double value) ? value : -1;
     public bool IsWinner => isWinnerToggle.isOn;
     public ToggleGroup WinnerToggleGroup { set => isWinnerToggle.group = value; }
 

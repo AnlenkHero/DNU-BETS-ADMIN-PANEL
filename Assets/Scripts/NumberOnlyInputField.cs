@@ -19,7 +19,7 @@ public class NumberOnlyInputField : MonoBehaviour
             return addedChar;
         }
         
-        if (addedChar == ',' && !text.Contains(","))
+        if (addedChar == '.' && !text.Contains("."))
         {
             return addedChar;
         }
