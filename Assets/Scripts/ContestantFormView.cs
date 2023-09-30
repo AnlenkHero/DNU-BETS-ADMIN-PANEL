@@ -21,7 +21,7 @@ public class ContestantFormView : MonoBehaviour
         if (contestant == null) return;
         
         nameField.text = contestant.Name;
-        coefficientField.text = contestant.Coefficient.ToString();
+        coefficientField.text = contestant.Coefficient.ToString(CultureInfo.InvariantCulture);
         isWinnerToggle.isOn = contestant.Winner;
     }
 }
