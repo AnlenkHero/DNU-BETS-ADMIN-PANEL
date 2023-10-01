@@ -197,6 +197,11 @@ public class EditorManager : MonoBehaviour
                         {
                             if (matchToCreate.Contestants.Any(x => x.Winner) && bets != null)
                             {
+                                foreach (var bet in bets)
+                                {
+                                    bet.IsActive = false;
+                                    BetsRepository.UpdateBet(bet.BetId, bet);
+                                }
                                 var contestant = matchModel.Contestants.First(x => x.Winner );
                                 foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id))
                                 {

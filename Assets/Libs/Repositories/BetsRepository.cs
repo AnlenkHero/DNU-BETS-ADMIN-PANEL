@@ -88,7 +88,9 @@ namespace Libs.Repositories
                     {
                         MatchId = rawBet["MatchId"] as string,
                         ContestantId = rawBet["ContestantId"] as string,
-                        BetAmount = Convert.ToDouble(rawBet["BetAmount"])
+                        BetAmount = Convert.ToDouble(rawBet["BetAmount"]),
+                        UserId = rawBet["UserId"] as string,
+                        IsActive = (bool)rawBet["IsActive"]
                     };
 
                     resolve(bet);
@@ -122,7 +124,8 @@ namespace Libs.Repositories
                             MatchId = rawBet["MatchId"] as string,
                             ContestantId = rawBet["ContestantId"] as string,
                             BetAmount = Convert.ToDouble(rawBet["BetAmount"]),
-                            UserId = rawBet["UserId"] as string
+                            UserId = rawBet["UserId"] as string,
+                            IsActive = (bool)rawBet["IsActive"]
                         };
 
                         bets.Add(bet);
@@ -159,10 +162,12 @@ namespace Libs.Repositories
 
                         Bet bet = new Bet
                         {
+                            BetId = rawBetKey,
                             MatchId = rawBet["MatchId"] as string,
                             ContestantId = rawBet["ContestantId"] as string,
                             BetAmount = Convert.ToDouble(rawBet["BetAmount"]),
-                            UserId = rawBet["UserId"] as string
+                            UserId = rawBet["UserId"] as string,
+                            IsActive = (bool)rawBet["IsActive"]
                         };
 
                         bets.Add(bet);
