@@ -86,6 +86,7 @@ namespace Libs.Repositories
 
                     Bet bet = new Bet
                     {
+                        BetId = betId,
                         MatchId = rawBet["MatchId"] as string,
                         ContestantId = rawBet["ContestantId"] as string,
                         BetAmount = Convert.ToDouble(rawBet["BetAmount"]),
@@ -121,6 +122,7 @@ namespace Libs.Repositories
 
                         Bet bet = new Bet
                         {
+                            BetId = rawBetKey,
                             MatchId = rawBet["MatchId"] as string,
                             ContestantId = rawBet["ContestantId"] as string,
                             BetAmount = Convert.ToDouble(rawBet["BetAmount"]),
