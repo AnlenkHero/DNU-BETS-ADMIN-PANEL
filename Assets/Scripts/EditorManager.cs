@@ -52,7 +52,7 @@ public class EditorManager : MonoBehaviour
     #endregion
 
     #region Initializers
-    
+
     private void InitializeData()
     {
         if (MatchesCache.selectedMatchID != null)
@@ -150,7 +150,6 @@ public class EditorManager : MonoBehaviour
     {
         saveButton.interactable = false;
         backButton.interactable = false;
-        
 
 
         ContestantFormView[] contestantViews = contestantListParent.GetComponentsInChildren<ContestantFormView>();
@@ -202,16 +201,20 @@ public class EditorManager : MonoBehaviour
                                     bet.IsActive = false;
                                     BetsRepository.UpdateBet(bet.BetId, bet);
                                 }
-                                var contestant = matchModel.Contestants.First(x => x.Winner );
+
+                                var contestant = matchModel.Contestants.First(x => x.Winner);
                                 foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id))
                                 {
-                                    UserRepository.UpdateUserBalanceAfterBet(bet.UserId,bet.BetAmount,contestant.Coefficient);
+                                    double winnings = bet.BetAmount * contestant.Coefficient;
+                                    UserRepository.GetUserByUserId(bet.UserId).Then(user =>
+                                    {
+                                        user.Balance += winnings;
+                                        UserRepository.UpdateUserBalance(user).Catch(exception =>
+                                            Debug.Log($"Failed to update user balance {exception.Message}"));
+                                    }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
                                 }
                             }
-                        }).Catch(exception =>
-                    {
-                        Debug.Log(exception.Message);
-                    });
+                        }).Catch(exception => { Debug.Log(exception.Message); });
                     infoPanel.ShowPanel(Color.green, "Match was edited successfully!", "Edit again",
                         $"Edited match ID: {MatchesCache.selectedMatchID}");
 
@@ -233,15 +236,15 @@ public class EditorManager : MonoBehaviour
     {
         backButton.interactable = false;
         MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ =>
-        {
-            var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
-            MatchesRepository.DeleteImage(match.ImageUrl);
-            infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Back to match chooser",
-                $"Deleted match ID: {MatchesCache.selectedMatchID}", BackToMatchChooseScene);
-            MatchesCache.selectedMatchID = null;
-        }).Catch(error =>
-            infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!",
-                "Try again", error.Message))
+            {
+                var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
+                MatchesRepository.DeleteImage(match.ImageUrl);
+                infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Back to match chooser",
+                    $"Deleted match ID: {MatchesCache.selectedMatchID}", BackToMatchChooseScene);
+                MatchesCache.selectedMatchID = null;
+            }).Catch(error =>
+                infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!",
+                    "Try again", error.Message))
             .Finally(() => backButton.interactable = true);
     }
 
