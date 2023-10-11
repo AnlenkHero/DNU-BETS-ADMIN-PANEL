@@ -209,7 +209,7 @@ public class EditorManager : MonoBehaviour
                                     UserRepository.GetUserByUserId(bet.UserId).Then(user =>
                                     {
                                         user.Balance += winnings;
-                                        UserRepository.UpdateUserBalance(user).Catch(exception =>
+                                        UserRepository.UpdateUserInfo(user).Catch(exception =>
                                             Debug.Log($"Failed to update user balance {exception.Message}"));
                                     }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
                                 }
