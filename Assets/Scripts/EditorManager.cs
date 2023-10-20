@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Libs.Helpers;
 using Libs.Models;
 using Libs.Models.RequestModels;
 using Libs.Repositories;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -76,7 +75,17 @@ public class EditorManager : MonoBehaviour
         contestantListManager.SetData(match);
         matchTitle.text = match.MatchTitle;
         bettingAvailableToggle.isOn = match.IsBettingAvailable;
-        StartCoroutine(LoadImage(match.ImageUrl));
+        TextureLoader.LoadTexture(this,match.ImageUrl,texture2D =>
+        {
+            if (texture2D != null)
+            {
+                matchImage.texture = texture2D; 
+            }
+            else
+            {
+                Debug.LogError("Texture failed to load.");
+            }
+        });
     }
 
     private string GetImageUrl(string id)
@@ -121,29 +130,7 @@ public class EditorManager : MonoBehaviour
     }
 
     #endregion
-
-    #region Coroutine Methods
-
-    IEnumerator LoadImage(string path)
-    {
-        using (UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(path))
-        {
-            yield return uwr.SendWebRequest();
-
-            if (uwr.result != UnityWebRequest.Result.Success)
-            {
-                Debug.Log($"Failed to get image from file browser {uwr.error}");
-            }
-            else
-            {
-                var uwrTexture = DownloadHandlerTexture.GetContent(uwr);
-                matchImage.texture = uwrTexture;
-            }
-        }
-    }
-
-    #endregion
-
+    
     #region UI Event Handlers
 
     private void SaveMatch()
@@ -208,7 +195,7 @@ public class EditorManager : MonoBehaviour
                                     double winnings = bet.BetAmount * contestant.Coefficient;
                                     UserRepository.GetUserByUserId(bet.UserId).Then(user =>
                                     {
-                                        user.Balance += winnings;
+                                        user.balance += winnings;
                                         UserRepository.UpdateUserInfo(user).Catch(exception =>
                                             Debug.Log($"Failed to update user balance {exception.Message}"));
                                     }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));

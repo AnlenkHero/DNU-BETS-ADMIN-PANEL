@@ -1,8 +1,7 @@
 using System;
-using System.Collections;
+using Libs.Helpers;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -21,7 +20,17 @@ public class MatchButton : MonoBehaviour
     {
         buttonText.text = text;
         id = matchId;
-        StartCoroutine(LoadImage(imageUrl));
+        TextureLoader.LoadTexture(this,imageUrl,texture2D =>
+        {
+            if (texture2D != null)
+            {
+                image.texture = texture2D; 
+            }
+            else
+            {
+                Debug.LogError("Texture failed to load.");
+            }
+        });
     }
     private void MoveToEdit()
     {
@@ -29,20 +38,5 @@ public class MatchButton : MonoBehaviour
             MatchesCache.selectedMatchID = id;
         SceneManager.LoadScene("EditScene");
     }
-    IEnumerator LoadImage(string path)
-    {
-        UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(path);
-        {
-            yield return uwr.SendWebRequest();
-            if (uwr.result != UnityWebRequest.Result.Success)
-            {
-                Debug.Log($"Failed to get image from file browser {uwr.error}");
-            }
-            else
-            {
-                var uwrTexture = DownloadHandlerTexture.GetContent(uwr);
-                image.texture = uwrTexture;
-            }
-        }
-    }
+    
 }

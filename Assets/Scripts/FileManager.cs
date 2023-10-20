@@ -1,9 +1,8 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using AnotherFileBrowser.Windows;
-using UnityEngine.Networking;
+using Libs.Helpers;
 
 public class FileManager : MonoBehaviour
 {
@@ -18,25 +17,18 @@ public class FileManager : MonoBehaviour
       
       new FileBrowser().OpenFileBrowser(bp, path =>
       {
-         StartCoroutine(LoadImage(path));
+         TextureLoader.LoadTexture(this,path,texture2D =>
+         {
+            if (texture2D != null)
+            {
+               rawImage.texture = texture2D; 
+               OnImageSelected?.Invoke();
+            }
+            else
+            {
+               Debug.LogError("Texture failed to load.");
+            }
+         });
       });
-   }
-
-   IEnumerator LoadImage(string path)
-   {
-      UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(path);
-      {
-         yield return uwr.SendWebRequest();
-         if (uwr.result != UnityWebRequest.Result.Success)
-         {
-            Debug.Log($"Failed to get image from file browser {uwr.error}");
-         }
-         else
-         {
-            var uwrTexture = DownloadHandlerTexture.GetContent(uwr);
-            rawImage.texture = uwrTexture;
-            OnImageSelected?.Invoke();
-         }
-      }
    }
 }

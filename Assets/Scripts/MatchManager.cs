@@ -9,7 +9,6 @@ using UnityEngine.UI;
 
 public class MatchManager : MonoBehaviour
 {
-   private List<Match> matchList = new ();
    [SerializeField] private MatchButton matchPrefab;
    [SerializeField] private Transform matchPrefabParent;
    [SerializeField] private GameObject emptyMatchPrefab;
@@ -18,9 +17,9 @@ public class MatchManager : MonoBehaviour
    {
       MatchesRepository.GetNotFinishedMatches().Then(matches =>
          {
-            matchList = matches;
-            MatchesCache.matches = matchList;
-            foreach (var match in matchList)
+            
+            MatchesCache.matches = matches;
+            foreach (var match in matches)
             {
                var tempMatchPrefab = Instantiate(matchPrefab, matchPrefabParent);
                tempMatchPrefab.SetInfo(match.MatchTitle, match.ImageUrl,match.Id);
@@ -30,13 +29,5 @@ public class MatchManager : MonoBehaviour
          {
             Debug.LogError($"Error getting matches: {error.Message}");
          });
-      /* for (int i = 0; i < ; i++)
-       {
-         var tempMatchPrefab = Instantiate(matchPrefab, matchPrefabParent);
-          _matchList.Add(tempMatchPrefab);
-       }
- 
-       var tempEmptyMatch = Instantiate(emptyMatchPrefab, matchPrefabParent);
-       _matchList.Add(tempEmptyMatch);*/
    }
 }

@@ -18,6 +18,7 @@ public class InfoPanel : MonoBehaviour
         headerText.color = color;
         infoText.text = info ?? "";
         buttonText.text = textForButton ?? "hide";
+        button.onClick.RemoveAllListeners();
         button.onClick.AddListener(() =>
         {
             buttonAction?.Invoke();
