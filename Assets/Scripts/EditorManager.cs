@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -24,6 +25,11 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private Toggle bettingAvailableToggle;
     [SerializeField] private InfoPanel infoPanel;
     [SerializeField] private ContestantListManager contestantListManager;
+    [SerializeField] private MatchBettingInfo matchBettingInfo;
+    [SerializeField] private Transform matchBettingInfoParent;
+    [SerializeField] private GameObject emptyBetsGameObject;
+    [SerializeField] private Button refreshBetsButton;
+    [SerializeField] private GameObject matchBettingInfoTotalBets;
 
     #endregion
 
@@ -31,6 +37,7 @@ public class EditorManager : MonoBehaviour
 
     private bool imageUpdated;
     private static readonly CultureInfo DefaultDateCulture = CultureInfo.InvariantCulture;
+    private const string MatchChooseSceneName = "MatchChooseScene";
 
     #endregion
 
@@ -45,6 +52,7 @@ public class EditorManager : MonoBehaviour
     {
         InitializeData();
         InitializeListeners();
+        CheckMatchForBets();
         CheckDeleteButtonConditions();
     }
 
@@ -58,16 +66,51 @@ public class EditorManager : MonoBehaviour
             SetData(MatchesCache.selectedMatchID);
     }
 
+
     private void InitializeListeners()
     {
         backButton.onClick.AddListener(BackToMatchChooseScene);
         saveButton.onClick.AddListener(SaveMatch);
         deleteButton.onClick.AddListener(DeleteMatch);
+        refreshBetsButton.onClick.AddListener(CheckMatchForBets);
     }
 
     #endregion
 
     #region Helper Methods
+
+    private IEnumerator ClearExistingBets()
+    {
+        foreach (Transform child in matchBettingInfoParent)
+        {
+            if (child.gameObject == emptyBetsGameObject)
+            {
+                continue;
+            }
+
+            Destroy(child.gameObject);
+        }
+
+        yield return new WaitForEndOfFrame();
+    }
+
+    private MatchRequest PrepareMatchRequest()
+    {
+        ContestantFormView[] contestantViews = contestantListParent.GetComponentsInChildren<ContestantFormView>();
+        var matchToCreate = new MatchRequest()
+        {
+            IsBettingAvailable = bettingAvailableToggle.isOn,
+            MatchTitle = matchTitle.text,
+            Contestants = GetContestants(contestantViews)
+        };
+
+        if (matchToCreate.Contestants.Any(x => x.Winner))
+        {
+            matchToCreate.FinishedDateUtc = DateTime.UtcNow.ToString(DefaultDateCulture);
+        }
+
+        return matchToCreate;
+    }
 
     private void SetData(string id)
     {
@@ -75,11 +118,11 @@ public class EditorManager : MonoBehaviour
         contestantListManager.SetData(match);
         matchTitle.text = match.MatchTitle;
         bettingAvailableToggle.isOn = match.IsBettingAvailable;
-        TextureLoader.LoadTexture(this,match.ImageUrl,texture2D =>
+        TextureLoader.LoadTexture(this, match.ImageUrl, texture2D =>
         {
             if (texture2D != null)
             {
-                matchImage.texture = texture2D; 
+                matchImage.texture = texture2D;
             }
             else
             {
@@ -130,7 +173,7 @@ public class EditorManager : MonoBehaviour
     }
 
     #endregion
-    
+
     #region UI Event Handlers
 
     private void SaveMatch()
@@ -138,106 +181,147 @@ public class EditorManager : MonoBehaviour
         saveButton.interactable = false;
         backButton.interactable = false;
 
-
-        ContestantFormView[] contestantViews = contestantListParent.GetComponentsInChildren<ContestantFormView>();
-        var matchToCreate = new MatchRequest()
-        {
-            IsBettingAvailable = bettingAvailableToggle.isOn,
-            MatchTitle = matchTitle.text,
-            Contestants = GetContestants(contestantViews)
-        };
-
-        if (matchToCreate.Contestants.Any(x => x.Winner))
-        {
-            matchToCreate.FinishedDateUtc = DateTime.UtcNow.ToString(DefaultDateCulture);
-        }
+        var matchToCreate = PrepareMatchRequest();
 
         if (MatchesCache.selectedMatchID == null)
         {
-            MatchesRepository.Save(matchToCreate, matchImage.texture as Texture2D).Then(newMatchId =>
-                {
-                    MatchesCache.selectedMatchID = newMatchId;
-                    infoPanel.ShowPanel(Color.green, "Match saved successfully!", "Edit", $"Match ID: {newMatchId}");
-
-                    MatchesCache.matches.Add(GetMatchModel(newMatchId, matchToCreate));
-                }).Catch(error =>
-                {
-                    infoPanel.ShowPanel(Color.red, "Match was not created!", "Try again", error.Message);
-                })
-                .Finally(() =>
-                {
-                    backButton.interactable = true;
-                    saveButton.interactable = true;
-                    deleteButton.interactable = true;
-                });
+            CreateNewMatch(matchToCreate);
         }
         else
         {
-            MatchesRepository.UpdateMatch(MatchesCache.selectedMatchID, matchToCreate,
-                imageUpdated ? matchImage.texture as Texture2D : null, GetImageUrl(MatchesCache.selectedMatchID)).Then(
-                _ =>
-                {
-                    var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
-                    BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(
-                        bets =>
-                        {
-                            if (matchToCreate.Contestants.Any(x => x.Winner) && bets != null)
-                            {
-                                foreach (var bet in bets)
-                                {
-                                    bet.IsActive = false;
-                                    BetsRepository.UpdateBet(bet.BetId, bet);
-                                }
-
-                                var contestant = matchModel.Contestants.First(x => x.Winner);
-                                foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id))
-                                {
-                                    double winnings = bet.BetAmount * contestant.Coefficient;
-                                    UserRepository.GetUserByUserId(bet.UserId).Then(user =>
-                                    {
-                                        user.balance += winnings;
-                                        UserRepository.UpdateUserInfo(user).Catch(exception =>
-                                            Debug.Log($"Failed to update user balance {exception.Message}"));
-                                    }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
-                                }
-                            }
-                        }).Catch(exception => { Debug.Log(exception.Message); });
-                    infoPanel.ShowPanel(Color.green, "Match was edited successfully!", "Edit again",
-                        $"Edited match ID: {MatchesCache.selectedMatchID}");
-
-                    MatchesCache.matches.Remove(MatchesCache.matches.First(x => x.Id == MatchesCache.selectedMatchID));
-                    MatchesCache.matches.Add(matchModel);
-                    //TODO LOW LVL OPTIMIZE!!!
-                }).Catch(error =>
-            {
-                infoPanel.ShowPanel(Color.red, "Match was not edited!", "Try again", error.Message);
-            }).Finally(() =>
-            {
-                saveButton.interactable = true;
-                backButton.interactable = true;
-            });
+            UpdateExistingMatch(matchToCreate);
         }
+    }
+
+    private void CreateNewMatch(MatchRequest matchToCreate)
+    {
+        MatchesRepository.Save(matchToCreate, matchImage.texture as Texture2D).Then(newMatchId =>
+        {
+            HandleMatchSavedSuccessfully(newMatchId, matchToCreate);
+        }).Catch(HandleMatchCreationFailure).Finally(HandleMatchCreationCompletion);
+    }
+
+    private void UpdateExistingMatch(MatchRequest matchToCreate)
+    {
+        MatchesRepository.UpdateMatch(MatchesCache.selectedMatchID, matchToCreate,
+                imageUpdated ? matchImage.texture as Texture2D : null, GetImageUrl(MatchesCache.selectedMatchID)).Then(
+                _ => { HandleMatchUpdatedSuccessfully(matchToCreate); })
+            .Catch(HandleMatchUpdateFailure).Finally(HandleMatchUpdateCompletion);
+    }
+
+    private void HandleMatchSavedSuccessfully(string newMatchId, MatchRequest createdMatchToCreate)
+    {
+        MatchesCache.selectedMatchID = newMatchId;
+        infoPanel.ShowPanel(Color.green, "Match saved successfully!", "Edit", $"Match ID: {newMatchId}");
+
+        MatchesCache.matches.Add(GetMatchModel(newMatchId, createdMatchToCreate));
+    }
+
+    private void HandleMatchCreationFailure(Exception error)
+    {
+        infoPanel.ShowPanel(Color.red, "Match was not created!", "Try again", error.Message);
+    }
+
+    private void HandleMatchCreationCompletion()
+    {
+        backButton.interactable = true;
+        saveButton.interactable = true;
+        deleteButton.interactable = true;
+    }
+
+    private void CheckMatchForBets()
+    {
+        StartCoroutine(ClearExistingBets());
+        emptyBetsGameObject.SetActive(false);
+        BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(bets =>
+        {
+            var matchModel = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
+            foreach (var contestant in matchModel.Contestants)
+            {
+                var tempMatchBettingInfo = Instantiate(matchBettingInfo, matchBettingInfoParent);
+                double totalBetAmount =
+                    bets.Where((x => x.ContestantId == contestant.Id)).Sum(bet => bet.BetAmount);
+                tempMatchBettingInfo.SetData(contestant.Name, totalBetAmount);
+            }
+
+            var totalBets = Instantiate(matchBettingInfoTotalBets, matchBettingInfoParent);
+            totalBets.AddComponent<LayoutElement>().ignoreLayout = true;
+        }).Catch(_ => emptyBetsGameObject.SetActive(true));
+    }
+
+    private void HandleMatchUpdatedSuccessfully(MatchRequest matchToCreate)
+    {
+        var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
+
+        BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(
+            bets =>
+            {
+                if (matchToCreate.Contestants.Any(x => x.Winner) && bets != null)
+                {
+                    foreach (var bet in bets)
+                    {
+                        bet.IsActive = false;
+                        BetsRepository.UpdateBet(bet.BetId, bet);
+                    }
+
+                    var contestant = matchModel.Contestants.First(x => x.Winner);
+                    foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id))
+                    {
+                        double winnings = bet.BetAmount * contestant.Coefficient;
+                        UserRepository.GetUserByUserId(bet.UserId).Then(user =>
+                        {
+                            user.balance += winnings;
+                            UserRepository.UpdateUserInfo(user).Catch(exception =>
+                                Debug.Log($"Failed to update user balance {exception.Message}"));
+                        }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
+                    }
+                }
+            }).Catch(exception => { Debug.Log(exception.Message); });
+
+        infoPanel.ShowPanel(Color.green, "Match was edited successfully!", "Edit again",
+            $"Edited match ID: {MatchesCache.selectedMatchID}");
+
+        MatchesCache.matches.Remove(MatchesCache.matches.First(x => x.Id == MatchesCache.selectedMatchID));
+        MatchesCache.matches.Add(matchModel);
+        //TODO LOW LVL OPTIMIZE!!!
+    }
+
+
+    private void HandleMatchUpdateFailure(Exception error)
+    {
+        infoPanel.ShowPanel(Color.red, "Match was not edited!", "Try again", error.Message);
+    }
+
+    private void HandleMatchUpdateCompletion()
+    {
+        saveButton.interactable = true;
+        backButton.interactable = true;
     }
 
     private void DeleteMatch()
     {
         backButton.interactable = false;
-        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ =>
-            {
-                var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
-                MatchesRepository.DeleteImage(match.ImageUrl);
-                infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Back to match chooser",
-                    $"Deleted match ID: {MatchesCache.selectedMatchID}", BackToMatchChooseScene);
-                MatchesCache.selectedMatchID = null;
-            }).Catch(error =>
-                infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!",
-                    "Try again", error.Message))
-            .Finally(() => backButton.interactable = true);
+        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ => { HandleMatchDeletedSuccessfully(); })
+            .Catch(HandleMatchDeletionFailure).Finally(() => backButton.interactable = true);
+    }
+
+    private void HandleMatchDeletedSuccessfully()
+    {
+        var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
+        MatchesRepository.DeleteImage(match.ImageUrl);
+        infoPanel.ShowPanel(Color.green, "Match deleted successfully!", "Back to match chooser",
+            $"Deleted match ID: {MatchesCache.selectedMatchID}", BackToMatchChooseScene);
+        MatchesCache.selectedMatchID = null;
+    }
+
+    private void HandleMatchDeletionFailure(Exception error)
+    {
+        infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!", "Try again", error.Message);
     }
 
     private void BackToMatchChooseScene()
     {
-        SceneManager.LoadScene("MatchChooseScene");
+        SceneManager.LoadScene(MatchChooseSceneName);
         MatchesCache.selectedMatchID = null;
     }
 
