@@ -19,16 +19,23 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private Button backButton;
     [SerializeField] private Button saveButton;
     [SerializeField] private Button deleteButton;
+    [SerializeField] private Button refreshBetsButton;
+
     [SerializeField] private Transform contestantListParent;
-    [SerializeField] private RawImage matchImage;
-    [SerializeField] private TMP_InputField matchTitle;
+    [SerializeField] private Transform matchBettingInfoParent;
+
     [SerializeField] private Toggle bettingAvailableToggle;
+    [SerializeField] private Toggle matchCanceledToggle;
+
+    [SerializeField] private RawImage matchImage;
+
+    [SerializeField] private TMP_InputField matchTitle;
+
     [SerializeField] private InfoPanel infoPanel;
     [SerializeField] private ContestantListManager contestantListManager;
     [SerializeField] private MatchBettingInfo matchBettingInfo;
-    [SerializeField] private Transform matchBettingInfoParent;
+
     [SerializeField] private GameObject emptyBetsGameObject;
-    [SerializeField] private Button refreshBetsButton;
     [SerializeField] private GameObject matchBettingInfoTotalBets;
 
     #endregion
@@ -99,12 +106,13 @@ public class EditorManager : MonoBehaviour
         ContestantFormView[] contestantViews = contestantListParent.GetComponentsInChildren<ContestantFormView>();
         var matchToCreate = new MatchRequest()
         {
+            IsMatchCanceled = matchCanceledToggle.isOn,
             IsBettingAvailable = bettingAvailableToggle.isOn,
             MatchTitle = matchTitle.text,
             Contestants = GetContestants(contestantViews)
         };
 
-        if (matchToCreate.Contestants.Any(x => x.Winner))
+        if (matchToCreate.Contestants.Any(x => x.Winner) || matchToCreate.IsMatchCanceled)
         {
             matchToCreate.FinishedDateUtc = DateTime.UtcNow.ToString(DefaultDateCulture);
         }
@@ -118,6 +126,7 @@ public class EditorManager : MonoBehaviour
         contestantListManager.SetData(match);
         matchTitle.text = match.MatchTitle;
         bettingAvailableToggle.isOn = match.IsBettingAvailable;
+        matchCanceledToggle.isOn = match.IsMatchCanceled;
         TextureLoader.LoadTexture(this, match.ImageUrl, texture2D =>
         {
             if (texture2D != null)
@@ -161,6 +170,7 @@ public class EditorManager : MonoBehaviour
             ImageUrl = createdMatchToCreate.ImageUrl,
             MatchTitle = createdMatchToCreate.MatchTitle,
             IsBettingAvailable = createdMatchToCreate.IsBettingAvailable,
+            IsMatchCanceled = createdMatchToCreate.IsMatchCanceled,
             FinishedDateUtc = createdMatchToCreate.FinishedDateUtc,
             Contestants = createdMatchToCreate.Contestants.Select((contestant, index) => new Contestant
             {
@@ -261,7 +271,12 @@ public class EditorManager : MonoBehaviour
                     foreach (var bet in bets)
                     {
                         bet.IsActive = false;
-                        BetsRepository.UpdateBet(bet.BetId, bet);
+                        BetRequest newBetRequest = new BetRequest
+                        {
+                            BetAmount = bet.BetAmount, ContestantId = bet.ContestantId, MatchId = bet.MatchId,
+                            UserId = bet.UserId, IsActive = bet.IsActive
+                        };
+                        BetsRepository.UpdateBet(bet.BetId, newBetRequest);
                     }
 
                     var contestant = matchModel.Contestants.First(x => x.Winner);
@@ -271,6 +286,18 @@ public class EditorManager : MonoBehaviour
                         UserRepository.GetUserByUserId(bet.UserId).Then(user =>
                         {
                             user.balance += winnings;
+                            UserRepository.UpdateUserInfo(user).Catch(exception =>
+                                Debug.Log($"Failed to update user balance {exception.Message}"));
+                        }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
+                    }
+                }
+                else if (matchToCreate.IsMatchCanceled && bets != null)
+                {
+                    foreach (var bet in bets)
+                    {
+                        UserRepository.GetUserByUserId(bet.UserId).Then(user =>
+                        {
+                            user.balance += bet.BetAmount;
                             UserRepository.UpdateUserInfo(user).Catch(exception =>
                                 Debug.Log($"Failed to update user balance {exception.Message}"));
                         }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
