@@ -266,21 +266,10 @@ public class EditorManager : MonoBehaviour
         BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(
             bets =>
             {
-                if (matchToCreate.Contestants.Any(x => x.Winner) && bets != null)
+                if (matchModel.Contestants.Any(x => x.Winner) && bets != null)
                 {
-                    foreach (var bet in bets)
-                    {
-                        bet.IsActive = false;
-                        BetRequest newBetRequest = new BetRequest
-                        {
-                            BetAmount = bet.BetAmount, ContestantId = bet.ContestantId, MatchId = bet.MatchId,
-                            UserId = bet.UserId, IsActive = bet.IsActive
-                        };
-                        BetsRepository.UpdateBet(bet.BetId, newBetRequest);
-                    }
-
                     var contestant = matchModel.Contestants.First(x => x.Winner);
-                    foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id))
+                    foreach (var bet in bets.Where(bet => bet.ContestantId == contestant.Id && bet.IsActive))
                     {
                         double winnings = bet.BetAmount * contestant.Coefficient;
                         UserRepository.GetUserByUserId(bet.UserId).Then(user =>
@@ -290,11 +279,30 @@ public class EditorManager : MonoBehaviour
                                 Debug.Log($"Failed to update user balance {exception.Message}"));
                         }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
                     }
-                }
-                else if (matchToCreate.IsMatchCanceled && bets != null)
-                {
-                    foreach (var bet in bets)
+
+                    foreach (var bet in bets.Where(bet => bet.IsActive))
                     {
+                        bet.IsActive = false;
+                        BetRequest newBetRequest = new BetRequest
+                        {
+                            BetAmount = bet.BetAmount, ContestantId = bet.ContestantId, MatchId = bet.MatchId,
+                            UserId = bet.UserId, IsActive = bet.IsActive
+                        };
+                        BetsRepository.UpdateBet(bet.BetId, newBetRequest);
+                    }
+                }
+                else if (matchModel.IsMatchCanceled && bets != null)
+                {
+                    foreach (var bet in bets.Where((bet => bet.IsActive)))
+                    {
+                        bet.IsActive = false;
+                        BetRequest newBetRequest = new BetRequest
+                        {
+                            BetAmount = bet.BetAmount, ContestantId = bet.ContestantId, MatchId = bet.MatchId,
+                            UserId = bet.UserId, IsActive = bet.IsActive
+                        };
+                        BetsRepository.UpdateBet(bet.BetId, newBetRequest);
+
                         UserRepository.GetUserByUserId(bet.UserId).Then(user =>
                         {
                             user.balance += bet.BetAmount;
@@ -328,8 +336,32 @@ public class EditorManager : MonoBehaviour
     private void DeleteMatch()
     {
         backButton.interactable = false;
-        MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ => { HandleMatchDeletedSuccessfully(); })
-            .Catch(HandleMatchDeletionFailure).Finally(() => backButton.interactable = true);
+        BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(bets =>
+        {
+            if (bets == null) return;
+
+            foreach (var bet in bets.Where((bet => bet.IsActive)))
+            {
+                bet.IsActive = false;
+                BetRequest newBetRequest = new BetRequest
+                {
+                    BetAmount = bet.BetAmount, ContestantId = bet.ContestantId, MatchId = bet.MatchId,
+                    UserId = bet.UserId, IsActive = bet.IsActive
+                };
+                BetsRepository.UpdateBet(bet.BetId, newBetRequest);
+
+                UserRepository.GetUserByUserId(bet.UserId).Then(user =>
+                {
+                    user.balance += bet.BetAmount;
+                    UserRepository.UpdateUserInfo(user).Catch(exception =>
+                        Debug.Log($"Failed to update user balance {exception.Message}"));
+                }).Catch(exception => Debug.Log($"Failed to get user by id {exception.Message}"));
+            }
+        }).Catch(exception => { Debug.Log(exception.Message); }).Finally(() =>
+        {
+            MatchesRepository.DeleteMatch(MatchesCache.selectedMatchID).Then(_ => { HandleMatchDeletedSuccessfully(); })
+                .Catch(HandleMatchDeletionFailure).Finally(() => backButton.interactable = true);
+        });
     }
 
     private void HandleMatchDeletedSuccessfully()
