@@ -41,7 +41,7 @@ public class BuffInfoPanel : MonoBehaviour
 
     private void ProcessBuff(User user)
     {
-        foreach (var buffPurchase in user.buffPurchase.Where(x => x.isProcessed==false))
+        foreach (var buffPurchase in user.buffPurchase.Where(x => x.isProcessed == false))
         {
             buffPurchase.isProcessed = true;
         }
@@ -51,7 +51,9 @@ public class BuffInfoPanel : MonoBehaviour
             if (checkUser.buffPurchase.Count != user.buffPurchase.Count)
             {
                 infoPanel.ShowPanel(Color.red, "Error!!!",
-                    "Refresh scene", $"User has bought more buffs since you have opened this scene.", () => SceneManager.LoadScene(SceneManager.GetActiveScene().name));
+                    $"User has bought more buffs since you have opened this scene.",
+                    () => infoPanel.AddButton("Refresh scene",
+                        () => SceneManager.LoadScene(SceneManager.GetActiveScene().name)));
             }
             else
             {
@@ -59,14 +61,13 @@ public class BuffInfoPanel : MonoBehaviour
                 {
                     buffProcessedText.text = $"Buffs unprocessed:0";
                     infoPanel.ShowPanel(Color.green, "Success!!!",
-                        "Close", $"Buffs were processed for {user.userName}");
+                        $"Buffs were processed for {user.userName}");
                 }).Catch(exception =>
                 {
                     infoPanel.ShowPanel(Color.red, "Error!!!",
-                        "Try again", $"Buffs were not processed.\n{exception.Message}");
+                        $"Buffs were not processed.\n{exception.Message}");
                 });
             }
         }));
-
     }
 }

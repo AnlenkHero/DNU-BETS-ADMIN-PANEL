@@ -16,16 +16,17 @@ public class PlayerBuffManager : MonoBehaviour
         UserRepository.GetAllUsers().Then(userList =>
         {
             IEnumerable<User> usersWithUnprocessedBuffs = userList.Where(x => x.buffPurchase.Any(x => !x.isProcessed));
-            foreach(User user in usersWithUnprocessedBuffs)
+            foreach (User user in usersWithUnprocessedBuffs)
             {
                 var buffPanel = Instantiate(buffInfoPrefab, buffInfoParent);
-                buffPanel.SetData(user,infoPanel);
+                buffPanel.SetData(user, infoPanel);
             }
+
             if (!usersWithUnprocessedBuffs.Any())
             {
                 infoPanel.ShowPanel(Color.red, "No users found",
-                    "Back", "There is no users with unprocessed buffs",
-                    () => SceneManager.LoadScene("MatchChooseScene"));
+                    "There are no users with unprocessed buffs",
+                    () => { infoPanel.AddButton("Back", () => SceneManager.LoadScene("MatchChooseScene")); });
             }
         });
     }

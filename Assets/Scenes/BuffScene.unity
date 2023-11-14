@@ -706,7 +706,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1974220682}
   m_HandleRect: {fileID: 1974220681}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1242,6 +1242,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2138296939}
     m_Modifications:
+    - target: {fileID: 1212438690148401780, guid: 0724cd3d983f6a647b76ae2c458c1b82,
+        type: 3}
+      propertyPath: panel
+      value: 
+      objectReference: {fileID: 1606935119}
     - target: {fileID: 5558917612818672445, guid: 0724cd3d983f6a647b76ae2c458c1b82,
         type: 3}
       propertyPath: m_Name
@@ -1357,6 +1362,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0724cd3d983f6a647b76ae2c458c1b82, type: 3}
+--- !u!1 &1606935119 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5874375600860178508, guid: 0724cd3d983f6a647b76ae2c458c1b82,
+    type: 3}
+  m_PrefabInstance: {fileID: 1606935118}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1675730199
 GameObject:
   m_ObjectHideFlags: 0
