@@ -146,7 +146,7 @@ GameObject:
   - component: {fileID: 3624671076647936993}
   - component: {fileID: 447521161158930392}
   - component: {fileID: 6418835097648286955}
-  - component: {fileID: 7092970700734041919}
+  - component: {fileID: 6775356855271477441}
   m_Layer: 5
   m_Name: MatchBettingInfo Total bets Prefab
   m_TagString: Untagged
@@ -213,7 +213,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &7092970700734041919
+--- !u!114 &6775356855271477441
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -222,11 +222,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 4449168515082106625}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af77ff4252f3409f8e210e3b7799d082, type: 3}
+  m_Script: {fileID: 11500000, guid: 837417f69754c8d49bb7f39917c16cd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  contestantName: {fileID: 1505969783425633597}
-  totalBetAmount: {fileID: 7888961336258618611}
+  totalBetsAmount: {fileID: 7888961336258618611}
 --- !u!1 &8448180124561360449
 GameObject:
   m_ObjectHideFlags: 0
@@ -292,7 +291,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7ddbd629babfac0438de2ae79c96f365, type: 2}
   m_sharedMaterial: {fileID: -4668654087732327743, guid: 7ddbd629babfac0438de2ae79c96f365,

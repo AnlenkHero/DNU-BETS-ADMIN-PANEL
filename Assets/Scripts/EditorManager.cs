@@ -36,7 +36,7 @@ public class EditorManager : MonoBehaviour
     [SerializeField] private MatchBettingInfo matchBettingInfo;
 
     [SerializeField] private GameObject emptyBetsGameObject;
-    [SerializeField] private GameObject matchBettingInfoTotalBets;
+    [SerializeField] private MatchBettingInfoTotalBets matchBettingInfoTotalBets;
 
     #endregion
 
@@ -244,6 +244,7 @@ public class EditorManager : MonoBehaviour
     {
         StartCoroutine(ClearExistingBets());
         emptyBetsGameObject.SetActive(false);
+        
         BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(bets =>
         {
             var matchModel = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
@@ -256,7 +257,9 @@ public class EditorManager : MonoBehaviour
             }
 
             var totalBets = Instantiate(matchBettingInfoTotalBets, matchBettingInfoParent);
-            totalBets.AddComponent<LayoutElement>().ignoreLayout = true;
+            totalBets.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            totalBets.SetData(bets.Count);
+            
         }).Catch(_ => emptyBetsGameObject.SetActive(true));
     }
 

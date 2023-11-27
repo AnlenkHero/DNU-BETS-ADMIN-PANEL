@@ -541,7 +541,7 @@ MonoBehaviour:
   matchBettingInfo: {fileID: 5337401047633540232, guid: 5cfc0a6a120d5f44e9e574b660a72211,
     type: 3}
   emptyBetsGameObject: {fileID: 807657831}
-  matchBettingInfoTotalBets: {fileID: 4449168515082106625, guid: a48d305d9db69a04f847bf72e8abf05a,
+  matchBettingInfoTotalBets: {fileID: 6775356855271477441, guid: a48d305d9db69a04f847bf72e8abf05a,
     type: 3}
 --- !u!1 &725534133
 GameObject:
