@@ -363,7 +363,7 @@ public class EditorManager : MonoBehaviour
                     BetAmount = bet.BetAmount, ContestantId = bet.ContestantId, MatchId = bet.MatchId,
                     UserId = bet.UserId, IsActive = bet.IsActive
                 };
-                BetsRepository.UpdateBet(bet.BetId, newBetRequest);
+                BetsRepository.UpdateBet(bet.BetId, newBetRequest).Then(helper => BetsRepository.DeleteBet(bet.BetId));
 
                 UserRepository.GetUserByUserId(bet.UserId).Then(user =>
                 {
