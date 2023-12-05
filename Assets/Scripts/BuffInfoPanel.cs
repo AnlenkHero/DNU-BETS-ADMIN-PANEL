@@ -50,7 +50,7 @@ public class BuffInfoPanel : MonoBehaviour
         {
             if (checkUser.buffPurchase.Count != user.buffPurchase.Count)
             {
-                infoPanel.ShowPanel(Color.red, "Error!!!",
+                infoPanel.ShowPanel(ColorHelper.HotPink, "Error!!!",
                     $"User has bought more buffs since you have opened this scene.",
                     () => infoPanel.AddButton("Refresh scene",
                         () => SceneManager.LoadScene(SceneManager.GetActiveScene().name)));
@@ -60,11 +60,11 @@ public class BuffInfoPanel : MonoBehaviour
                 UserRepository.UpdateUserInfo(user).Then(_ =>
                 {
                     buffProcessedText.text = $"Buffs unprocessed:0";
-                    infoPanel.ShowPanel(Color.green, "Success!!!",
+                    infoPanel.ShowPanel(ColorHelper.LightGreen, "Success!!!",
                         $"Buffs were processed for {user.userName}");
                 }).Catch(exception =>
                 {
-                    infoPanel.ShowPanel(Color.red, "Error!!!",
+                    infoPanel.ShowPanel(ColorHelper.HotPink, "Error!!!",
                         $"Buffs were not processed.\n{exception.Message}");
                 });
             }

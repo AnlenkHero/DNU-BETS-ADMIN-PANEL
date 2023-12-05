@@ -222,14 +222,14 @@ public class EditorManager : MonoBehaviour
     private void HandleMatchSavedSuccessfully(string newMatchId, MatchRequest createdMatchToCreate)
     {
         MatchesCache.selectedMatchID = newMatchId;
-        infoPanel.ShowPanel(Color.green, "Match saved successfully!", $"Match ID: {newMatchId}");
+        infoPanel.ShowPanel(ColorHelper.LightGreen, "Match saved successfully!", $"Match ID: {newMatchId}");
 
         MatchesCache.matches.Add(GetMatchModel(newMatchId, createdMatchToCreate));
     }
 
     private void HandleMatchCreationFailure(Exception error)
     {
-        infoPanel.ShowPanel(Color.red, "Match was not created!", error.Message);
+        infoPanel.ShowPanel(ColorHelper.HotPink, "Match was not created!", error.Message);
     }
 
     private void HandleMatchCreationCompletion()
@@ -263,6 +263,7 @@ public class EditorManager : MonoBehaviour
         }).Catch(_ => emptyBetsGameObject.SetActive(true));
     }
 
+    
     private void HandleMatchUpdatedSuccessfully(MatchRequest matchToCreate)
     {
         var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
@@ -317,7 +318,7 @@ public class EditorManager : MonoBehaviour
                 }
             }).Catch(exception => { Debug.Log(exception.Message); });
 
-        infoPanel.ShowPanel(Color.green, "Match was edited successfully!",
+        infoPanel.ShowPanel(ColorHelper.LightGreen, "Match was edited successfully!",
             $"Edited match ID: {MatchesCache.selectedMatchID}");
 
         MatchesCache.matches.Remove(MatchesCache.matches.First(x => x.Id == MatchesCache.selectedMatchID));
@@ -328,7 +329,7 @@ public class EditorManager : MonoBehaviour
 
     private void HandleMatchUpdateFailure(Exception error)
     {
-        infoPanel.ShowPanel(Color.red, "Match was not edited!", error.Message);
+        infoPanel.ShowPanel(ColorHelper.HotPink, "Match was not edited!", error.Message);
     }
 
     private void HandleMatchUpdateCompletion()
@@ -339,7 +340,7 @@ public class EditorManager : MonoBehaviour
 
     private void DeleteMatchConfirmation()
     {
-        infoPanel.ShowPanel(Color.yellow, "Confirm deletion",
+        infoPanel.ShowPanel(ColorHelper.PaleYellow, "Confirm deletion",
             "Delete or Cancel?",
             () =>
             {
@@ -383,7 +384,7 @@ public class EditorManager : MonoBehaviour
     {
         var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
         MatchesRepository.DeleteImage(match.ImageUrl);
-        infoPanel.ShowPanel(Color.green, "Match deleted successfully!",
+        infoPanel.ShowPanel(ColorHelper.LightGreen, "Match deleted successfully!",
             $"Deleted match ID: {MatchesCache.selectedMatchID}",
             () => infoPanel.AddButton("Back to match choose", BackToMatchChooseScene));
         MatchesCache.selectedMatchID = null;
@@ -391,7 +392,7 @@ public class EditorManager : MonoBehaviour
 
     private void HandleMatchDeletionFailure(Exception error)
     {
-        infoPanel.ShowPanel(Color.red, "Error!!Match was not deleted!", error.Message);
+        infoPanel.ShowPanel(ColorHelper.HotPink, "Error!!Match was not deleted!", error.Message);
     }
 
     private void BackToMatchChooseScene()

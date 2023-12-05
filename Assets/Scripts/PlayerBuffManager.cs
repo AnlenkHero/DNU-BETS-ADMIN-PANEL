@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Libs.Helpers;
 using Libs.Models;
 using Libs.Repositories;
 using UnityEngine;
@@ -24,7 +25,7 @@ public class PlayerBuffManager : MonoBehaviour
 
             if (!usersWithUnprocessedBuffs.Any())
             {
-                infoPanel.ShowPanel(Color.red, "No users found",
+                infoPanel.ShowPanel(ColorHelper.HotPink, "No users found",
                     "There are no users with unprocessed buffs",
                     () => { infoPanel.AddButton("Back", () => SceneManager.LoadScene("MatchChooseScene")); });
             }

@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using Libs.Helpers;
+using TMPro;
 using UnityEngine;
 
 public class MatchBettingInfo : MonoBehaviour
@@ -9,6 +10,6 @@ public class MatchBettingInfo : MonoBehaviour
     public void SetData(string contestant, double totalBet)
     {
         contestantName.text = contestant;
-        totalBetAmount.text = $"{totalBet.ToString()}<color=#90EE90>$</color>";
+        totalBetAmount.text = $"{totalBet.ToString()}<color={ColorHelper.LightGreenString}>$</color>";
     }
 }
