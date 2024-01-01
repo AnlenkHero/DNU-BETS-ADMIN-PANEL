@@ -1959,6 +1959,7 @@ MonoBehaviour:
     type: 3}
   contestantEditorParent: {fileID: 4303427006717070004}
   winnerToggleGroup: {fileID: 1662777816}
+  infoPanel: {fileID: 178406425}
 --- !u!114 &490908125523068536
 MonoBehaviour:
   m_ObjectHideFlags: 0

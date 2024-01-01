@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Libs.Helpers;
 using Libs.Models;
 using TMPro;
 using UnityEngine;
@@ -15,8 +16,9 @@ public class ContestantListManager : MonoBehaviour
     [SerializeField] private ContestantFormView contestantEditorPrefab;
     [SerializeField] private Transform contestantEditorParent;
     [SerializeField] private ToggleGroup winnerToggleGroup;
+    [SerializeField] private InfoPanel infoPanel;
 
-    private readonly List<ContestantFormView> contestantViews = new ();
+    private readonly List<ContestantFormView> contestantViews = new();
 
     private void Awake()
     {
@@ -31,13 +33,14 @@ public class ContestantListManager : MonoBehaviour
             UpdateButtonInteractivity();
         }
     }
-    
+
     public void SetData(Match match)
     {
         foreach (var contestant in match.Contestants)
         {
             AddContestantView(contestant);
         }
+
         UpdateButtonInteractivity();
     }
 
@@ -77,6 +80,7 @@ public class ContestantListManager : MonoBehaviour
             newContestantView.SetData(contestant);
         }
 
+        newContestantView.AddConfirmation(() => MatchWinnerConfirmation(newContestantView));
         contestantViews.Add(newContestantView);
         UpdateButtonInteractivity();
     }
@@ -98,5 +102,27 @@ public class ContestantListManager : MonoBehaviour
         {
             AddContestantView();
         }
+    }
+
+    private void MatchWinnerConfirmation(ContestantFormView contestantFormView)
+    {
+        if (!contestantFormView.IsWinner)
+            return;
+
+        infoPanel.ShowPanel(ColorHelper.PaleYellow, "Confirm match winner",
+            $"Is {contestantFormView.Name} winner?",
+            () =>
+            {
+                infoPanel.AddButton($"Yes, {contestantFormView.Name} is winner", () =>
+                {
+                    infoPanel.HidePanel();
+                    contestantFormView.IsWinner = true;
+                }, ColorHelper.LightGreenString);
+                infoPanel.AddButton("No, discard", () =>
+                {
+                    infoPanel.HidePanel();
+                    contestantFormView.IsWinner = false;
+                }, ColorHelper.HotPinkString);
+            });
     }
 }

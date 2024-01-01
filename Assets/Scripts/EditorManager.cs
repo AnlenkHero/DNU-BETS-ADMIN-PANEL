@@ -80,6 +80,7 @@ public class EditorManager : MonoBehaviour
         saveButton.onClick.AddListener(SaveMatch);
         deleteButton.onClick.AddListener(DeleteMatchConfirmation);
         refreshBetsButton.onClick.AddListener(CheckMatchForBets);
+        matchCanceledToggle.onValueChanged.AddListener(MatchCancelConfirmation);
     }
 
     #endregion
@@ -244,7 +245,7 @@ public class EditorManager : MonoBehaviour
     {
         StartCoroutine(ClearExistingBets());
         emptyBetsGameObject.SetActive(false);
-        
+
         BetsRepository.GetAllBetsByMatchId(MatchesCache.selectedMatchID).Then(bets =>
         {
             var matchModel = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
@@ -259,11 +260,10 @@ public class EditorManager : MonoBehaviour
             var totalBets = Instantiate(matchBettingInfoTotalBets, matchBettingInfoParent);
             totalBets.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
             totalBets.SetData(bets.Count);
-            
         }).Catch(_ => emptyBetsGameObject.SetActive(true));
     }
 
-    
+
     private void HandleMatchUpdatedSuccessfully(MatchRequest matchToCreate)
     {
         var matchModel = GetMatchModel(MatchesCache.selectedMatchID, matchToCreate);
@@ -338,13 +338,35 @@ public class EditorManager : MonoBehaviour
         backButton.interactable = true;
     }
 
+    private void MatchCancelConfirmation(bool isOn)
+    {
+        if (!isOn)
+            return;
+
+        infoPanel.ShowPanel(ColorHelper.PaleYellow, "Confirm match cancellation",
+            "You want to cancel match?",
+            () =>
+            {
+                infoPanel.AddButton("Cancel match", () =>
+                {
+                    infoPanel.HidePanel();
+                    matchCanceledToggle.isOn = true;
+                }, ColorHelper.HotPinkString);
+                infoPanel.AddButton("Discard", () =>
+                {
+                    infoPanel.HidePanel();
+                    matchCanceledToggle.isOn = false;
+                });
+            });
+    }
+
     private void DeleteMatchConfirmation()
     {
         infoPanel.ShowPanel(ColorHelper.PaleYellow, "Confirm deletion",
             "Delete or Cancel?",
             () =>
             {
-                infoPanel.AddButton("Delete", DeleteMatch);
+                infoPanel.AddButton("Delete", DeleteMatch, ColorHelper.HotPinkString);
                 infoPanel.AddButton("Cancel", () => infoPanel.HidePanel());
             });
     }

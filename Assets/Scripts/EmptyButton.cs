@@ -8,8 +8,9 @@ public class EmptyButton : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI buttonText;
     [SerializeField] private Button button;
+    [SerializeField] private Image buttonImage;
 
-    public void SetData(string textForButton, [CanBeNull] Action buttonAction = null)
+    public void SetData(string textForButton, [CanBeNull] Action buttonAction = null, [CanBeNull] string buttonColorString = null)
     {
         buttonText.text = textForButton;
         button.onClick.RemoveAllListeners();
@@ -17,6 +18,13 @@ public class EmptyButton : MonoBehaviour
         {
             buttonAction?.Invoke();
         });
+        
+        if (!ColorUtility.TryParseHtmlString(buttonColorString, out var newColor))
+        {
+            ColorUtility.TryParseHtmlString("#ffffff", out newColor);
+        }
+
+        buttonImage.color = newColor;
     }
 
 }

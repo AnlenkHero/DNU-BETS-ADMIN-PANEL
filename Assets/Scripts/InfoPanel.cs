@@ -27,10 +27,10 @@ public class InfoPanel : MonoBehaviour
         callback?.Invoke();
     }
 
-    public void AddButton(string buttonText, [CanBeNull] Action buttonAction = null)
+    public void AddButton(string buttonText, [CanBeNull] Action buttonAction = null, [CanBeNull] string buttonColorString = null)
     {
         var button = Instantiate(emptyButton, buttonsGrid);
-        button.SetData(buttonText,buttonAction);
+        button.SetData(buttonText,buttonAction, buttonColorString);
     }
     
     private IEnumerator ClearExistingButtons()
