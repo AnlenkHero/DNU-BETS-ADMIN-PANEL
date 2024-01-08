@@ -110,7 +110,7 @@ public class ContestantListManager : MonoBehaviour
             return;
 
         infoPanel.ShowPanel(ColorHelper.PaleYellow, "Confirm match winner",
-            $"Is {contestantFormView.Name} winner?",
+            $"Is <color={ColorHelper.LightGreenString}>{contestantFormView.Name}</color> winner?",
             () =>
             {
                 infoPanel.AddButton($"Yes, {contestantFormView.Name} is winner", () =>
