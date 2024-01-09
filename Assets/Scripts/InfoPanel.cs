@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using JetBrains.Annotations;
+using Libs.Helpers;
 using TMPro;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ public class InfoPanel : MonoBehaviour
     [SerializeField] private EmptyButton emptyButton;
     public void ShowPanel(Color color,string header,[CanBeNull] string info=null,[CanBeNull] Action callback=null)
     {
-        StartCoroutine(ClearExistingButtons());
+        buttonsGrid.ClearExistingElementsInParent();
         headerText.text = header;
         infoText.color = color;
         headerText.color = color;
@@ -31,16 +32,6 @@ public class InfoPanel : MonoBehaviour
     {
         var button = Instantiate(emptyButton, buttonsGrid);
         button.SetData(buttonText,buttonAction, buttonColorString);
-    }
-    
-    private IEnumerator ClearExistingButtons()
-    {
-        foreach (Transform child in buttonsGrid)
-        {
-            Destroy(child.gameObject);
-        }
-
-        yield return new WaitForEndOfFrame();
     }
 
     public void HidePanel()
