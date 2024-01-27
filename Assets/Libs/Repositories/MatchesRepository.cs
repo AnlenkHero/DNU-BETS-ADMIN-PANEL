@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Libs.Helpers;
 using Libs.Models;
 using Libs.Models.RequestModels;
 using Newtonsoft.Json;
@@ -27,7 +28,9 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            UploadImage(imageTexture, $"{Guid.NewGuid()}.png").Then(imageUrl =>
+            Texture2D resizedImage = ImageProcessing.ResizeAndCompressTexture(imageTexture, 1000, 1000, 75);
+
+            ImageHelper.UploadImage(resizedImage, $"{Guid.NewGuid()}.png").Then(imageUrl =>
             {
                 match.ImageUrl = imageUrl;
 
@@ -77,8 +80,10 @@ namespace Libs.Repositories
 
             if (imageToChange != null)
             {
-                DeleteImage(imageURL);
-                UploadImage(imageToChange, $"{Guid.NewGuid()}.png").Then(image =>
+                ImageHelper.DeleteImage(imageURL);
+                Texture2D resizedImage = ImageProcessing.ResizeAndCompressTexture(imageToChange, 400, 400, 50);
+                
+                ImageHelper.UploadImage(resizedImage, $"{Guid.NewGuid()}.png").Then(image =>
                 {
                     matchToUpdate.ImageUrl = image;
                     RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
@@ -107,7 +112,7 @@ namespace Libs.Repositories
             {
                 RestClient.Get($"{FirebaseDbUrl}matches.json").Then(response =>
                 {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
+                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
 
                     if (rawMatches == null || !rawMatches.Any())
                     {
@@ -138,7 +143,7 @@ namespace Libs.Repositories
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
+                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
                     List<Match> matches = ExtractMatchesFromRawData(rawMatches);
                     resolve(matches);
                 }).Catch(error =>
@@ -147,7 +152,7 @@ namespace Libs.Repositories
                 });
             });
         }
-        
+
         public static Promise<List<Match>> GetAllMatches()
         {
             return new Promise<List<Match>>((resolve, reject) =>
@@ -156,7 +161,7 @@ namespace Libs.Repositories
 
                 RestClient.Get(url).Then(response =>
                 {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
+                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
                     if (rawMatches == null || !rawMatches.Any())
                     {
                         reject(new Exception("No matches found"));
@@ -165,10 +170,7 @@ namespace Libs.Repositories
 
                     List<Match> matches = ExtractMatchesFromRawData(rawMatches);
                     resolve(matches);
-                }).Catch(error =>
-                {
-                    reject(new Exception($"Error retrieving all matches: {error.Message}"));
-                });
+                }).Catch(error => { reject(new Exception($"Error retrieving all matches: {error.Message}")); });
             });
         }
 
@@ -181,7 +183,7 @@ namespace Libs.Repositories
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(response.Text);
+                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
                     List<Match> matches = ExtractMatchesFromRawData(rawMatches);
                     resolve(matches);
                 }).Catch(error =>
@@ -190,7 +192,8 @@ namespace Libs.Repositories
                 });
             });
         }
-        private static List<Match> ExtractMatchesFromRawData(Dictionary<string, Dictionary<string, object>> rawMatches)
+
+        private static List<Match> ExtractMatchesFromRawData(Dictionary<string, MatchRequest> rawMatches)
         {
             List<Match> matches = new List<Match>();
             foreach (var rawMatchKey in rawMatches.Keys)
@@ -200,111 +203,33 @@ namespace Libs.Repositories
                 Match match = new Match
                 {
                     Id = rawMatchKey,
-                    ImageUrl = rawMatch["ImageUrl"] as string,
-                    MatchTitle = rawMatch["MatchTitle"] as string,
-                    IsBettingAvailable = (bool)rawMatch["IsBettingAvailable"],
-                    IsMatchCanceled = rawMatch.TryGetValue("IsMatchCanceled",out object matchCanceledObject) && (bool)matchCanceledObject, 
-                    FinishedDateUtc = rawMatch.TryGetValue("FinishedDateUtc", out var finishedDate)
-                        ? finishedDate as string
-                        : null,
+                    ImageUrl = rawMatch.ImageUrl,
+                    MatchTitle = rawMatch.MatchTitle,
+                    IsBettingAvailable = rawMatch.IsBettingAvailable,
+                    IsMatchCanceled = rawMatch.IsMatchCanceled,
+                    FinishedDateUtc = rawMatch.FinishedDateUtc,
                     Contestants = new List<Contestant>()
                 };
 
-                if (rawMatch.TryGetValue("Contestants", out var contestantsValue))
+                for (int i = 0; i < rawMatch.Contestants.Count; i++)
                 {
-                    string contestantsString = Convert.ToString(contestantsValue);
-                    List<Dictionary<string, object>> rawContestants =
-                        JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(contestantsString);
-                    for (int i = 0; i < rawContestants.Count; i++)
+                    var contestantRequest = rawMatch.Contestants[i];
+
+                    match.Contestants.Add(new Contestant
                     {
-                        var contestantDict = rawContestants[i];
-                        match.Contestants.Add(new Contestant
-                        {
-                            Id = i.ToString(),
-                            Name = contestantDict["Name"] as string,
-                            Coefficient = Convert.ToDouble(contestantDict["Coefficient"]),
-                            Winner = (bool)contestantDict["Winner"]
-                        });
-                    }
+                        Id = i.ToString(),
+                        Name = contestantRequest.Name,
+                        Coefficient = contestantRequest.Coefficient,
+                        Winner = contestantRequest.Winner
+                    });
                 }
 
                 matches.Add(match);
             }
+
             return matches;
         }
-        
 
-        private static Promise<string> UploadImage(Texture2D imageToUpload, string fileName)
-        {
-            return new Promise<string>((resolve, reject) =>
-            {
-                byte[] imageBytes = imageToUpload.EncodeToPNG();
-
-                var headers = new Dictionary<string, string>
-                {
-                    { "Content-Type", "image/png" }
-                };
-
-                var requestData = new RequestHelper
-                {
-                    Uri = $"{FirebaseStorageURL}/o?uploadType=media&name={fileName}",
-                    Method = "POST",
-                    BodyRaw = imageBytes,
-                    Headers = headers
-                };
-
-                RestClient.Request(requestData).Then(_ =>
-                {
-                    GetDownloadURL(fileName).Then(resolve).Catch(error =>
-                    {
-                        reject(new Exception($"Error retrieving download URL: {error.Message}"));
-                    });
-                }).Catch(error => { reject(new Exception($"Error uploading image: {error.Message}")); });
-            });
-        }
-
-        public static IPromise<ResponseHelper> DeleteImage(string imageUrl)
-        {
-            return new Promise<ResponseHelper>((resolve, reject) =>
-            {
-                var uri = new Uri(imageUrl);
-                string fileName = System.Web.HttpUtility.UrlDecode(uri.Segments.Last());
-
-                string deleteEndpoint = $"{FirebaseStorageURL}/o/{fileName}";
-
-                RestClient.Request(new RequestHelper
-                    {
-                        Uri = deleteEndpoint,
-                        Method = "DELETE",
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "Content-Type", "image/png" }
-                        },
-                    })
-                    .Then(resolve)
-                    .Catch(error => { reject(new Exception($"Failed to delete image: {error.Message}")); });
-            });
-        }
-
-
-        private static Promise<string> GetDownloadURL(string fileName)
-        {
-            return new Promise<string>((resolve, reject) =>
-            {
-                RestClient.Get($"{FirebaseStorageURL}/o/{fileName}").Then(response =>
-                {
-                    string downloadToken = JsonUtility.FromJson<DownloadUrlResponse>(response.Text).downloadTokens;
-                    string completeUrl = $"{FirebaseStorageURL}/o/{fileName}?alt=media&token={downloadToken}";
-                    resolve(completeUrl);
-                }).Catch(error => { reject(new Exception($"Error retrieving download URL: {error.Message}")); });
-            });
-        }
-
-        [Serializable]
-        public class DownloadUrlResponse
-        {
-            public string downloadTokens;
-        }
 
         private static string ValidateMatch(MatchRequest match)
         {

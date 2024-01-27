@@ -405,7 +405,7 @@ public class EditorManager : MonoBehaviour
     private void HandleMatchDeletedSuccessfully()
     {
         var match = MatchesCache.matches.First(match => match.Id == MatchesCache.selectedMatchID);
-        MatchesRepository.DeleteImage(match.ImageUrl);
+        ImageHelper.DeleteImage(match.ImageUrl);
         infoPanel.ShowPanel(ColorHelper.LightGreen, "Match deleted successfully!",
             $"Deleted match ID: {MatchesCache.selectedMatchID}",
             () => infoPanel.AddButton("Back to match choose", BackToMatchChooseScene));
