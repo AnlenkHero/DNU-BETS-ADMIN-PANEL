@@ -27,7 +27,7 @@ public class ContestantListManager : MonoBehaviour
 
     private void Start()
     {
-        if (IsNewMatch())
+        if (MatchesCache.SelectedMatch == null)
         {
             InitializeDefaultContestants();
             UpdateButtonInteractivity();
@@ -48,11 +48,6 @@ public class ContestantListManager : MonoBehaviour
     {
         decreaseButton.onClick.AddListener(RemoveLastContestantView);
         increaseButton.onClick.AddListener(AddNewContestantView);
-    }
-
-    private bool IsNewMatch()
-    {
-        return MatchesCache.selectedMatchID == null;
     }
 
     private void InitializeDefaultContestants()

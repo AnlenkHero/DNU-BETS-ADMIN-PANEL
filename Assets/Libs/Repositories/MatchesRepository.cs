@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Libs.Config;
 using Libs.Helpers;
 using Libs.Models;
 using Libs.Models.RequestModels;
@@ -11,14 +12,13 @@ using UnityEngine;
 
 namespace Libs.Repositories
 {
-    public static class MatchesRepository
+    public class MatchesRepository
     {
-        private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
-        private const string FirebaseStorageURL = "https://firebasestorage.googleapis.com/v0/b/wwe-bets.appspot.com";
-
-        public static IPromise<string> Save(MatchRequest match, Texture2D imageTexture)
+        private static readonly ApiSettings APISettings = ConfigManager.Settings.ApiSettings;
+        
+        public static IPromise<int> Create(MatchRequest match, Texture2D imageTexture)
         {
-            var promise = new Promise<string>();
+            var promise = new Promise<int>();
 
             string validationMessage = ValidateMatch(match);
 
@@ -33,12 +33,19 @@ namespace Libs.Repositories
             ImageHelper.UploadImage(resizedImage, $"{Guid.NewGuid()}.png").Then(imageUrl =>
             {
                 match.ImageUrl = imageUrl;
-
-                RestClient.Post($"{FirebaseDbUrl}matches.json", match).Then(response =>
+                string url = $"{APISettings.Url}/api/match";
+                string test = JsonConvert.SerializeObject(match);
+                var requestHelper = new RequestHelper()
                 {
-                    var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
+                    Uri = url,
+                    Body = match,
+                    EnableDebug = true
+                };
+                RestClient.Post(requestHelper).Then(response =>
+                {
+                    Dictionary<string,int> jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, int>>(response.Text);
 
-                    if (jsonResponse != null && jsonResponse.TryGetValue("name", out string newMatchId))
+                    if (jsonResponse != null && jsonResponse.TryGetValue("id", out int newMatchId))
                     {
                         promise.Resolve(newMatchId);
                     }
@@ -52,23 +59,32 @@ namespace Libs.Repositories
             return promise;
         }
 
-        public static IPromise<ResponseHelper> DeleteMatch(string matchId)
+        public static IPromise<ResponseHelper> DeleteMatch(int matchId)
         {
-            if (matchId == null)
+            if (matchId <= 0)
             {
                 var promise = new Promise<ResponseHelper>();
-                promise.Reject(new Exception("Id is null"));
+                promise.Reject(new ArgumentOutOfRangeException("Id cannot be less or equal to 0"));
                 return promise;
             }
 
-            string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            string url = $"{APISettings.Url}/api/match/{matchId}";
             return RestClient.Delete(url);
         }
 
-        public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,
-            Texture2D imageToChange = null, string imageURL = null)
+        public static IPromise<ResponseHelper> UpdateMatch(int matchId, MatchRequest matchToUpdate, Texture2D imageToChange = null)
         {
-            string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            if (matchId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(matchId));
+            }
+
+            if (matchToUpdate == null)
+            {
+                throw new ArgumentNullException(nameof(matchToUpdate));
+            }
+
+            string url = $"{APISettings.Url}/api/match/{matchId}";
             var promise = new Promise<ResponseHelper>();
             string validationMessage = ValidateMatch(matchToUpdate);
 
@@ -80,7 +96,7 @@ namespace Libs.Repositories
 
             if (imageToChange != null)
             {
-                ImageHelper.DeleteImage(imageURL);
+                ImageHelper.DeleteImage(matchToUpdate.ImageUrl);
                 Texture2D resizedImage = ImageProcessing.ResizeAndCompressTexture(imageToChange, 400, 400, 50);
                 
                 ImageHelper.UploadImage(resizedImage, $"{Guid.NewGuid()}.png").Then(image =>
@@ -89,147 +105,47 @@ namespace Libs.Repositories
                     RestClient.Put(url, matchToUpdate).Then(x => promise.Resolve(x))
                         .Catch(error => promise.Reject(error));
                 });
+                
                 return promise;
             }
 
-            if (String.IsNullOrWhiteSpace(imageURL))
-            {
-                promise.Reject(new Exception("image url not provided"));
-                return promise;
-            }
-
-            if (imageToChange == null && String.IsNullOrWhiteSpace(imageURL) != true)
-            {
-                matchToUpdate.ImageUrl = imageURL;
-            }
-
+            string test = JsonConvert.SerializeObject(matchToUpdate);
+            
             return RestClient.Put(url, matchToUpdate);
         }
 
-        public static Promise<Match> GetMatchById(string matchId)
+        public static Promise<Match> GetMatchById(int matchId)
         {
+            string url = $"{APISettings.Url}/api/match/{matchId}";
+            
             return new Promise<Match>((resolve, reject) =>
             {
-                RestClient.Get($"{FirebaseDbUrl}matches.json").Then(response =>
-                {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
-
-                    if (rawMatches == null || !rawMatches.Any())
-                    {
-                        reject(new Exception("No matches found"));
-                        return;
-                    }
-
-                    var matches = ExtractMatchesFromRawData(rawMatches);
-                    var match = matches.FirstOrDefault(m => m.Id == matchId);
-
-                    if (match == null)
-                    {
-                        reject(new Exception("Match not found"));
-                        return;
-                    }
-
-                    resolve(match);
-                }).Catch(error => { reject(new Exception($"Error retrieving matches: {error.Message}")); });
-            });
-        }
-
-
-        public static Promise<List<Match>> GetNotFinishedMatches()
-        {
-            return new Promise<List<Match>>((resolve, reject) =>
-            {
-                string queryUrl = $"{FirebaseDbUrl}matches.json?orderBy=\"FinishedDateUtc\"&equalTo=\"\"";
-
-                RestClient.Get(queryUrl).Then(response =>
-                {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
-                    List<Match> matches = ExtractMatchesFromRawData(rawMatches);
-                    resolve(matches);
-                }).Catch(error =>
-                {
-                    reject(new Exception($"Error retrieving not finished matches: {error.Message}"));
-                });
-            });
-        }
-
-        public static Promise<List<Match>> GetAllMatches()
-        {
-            return new Promise<List<Match>>((resolve, reject) =>
-            {
-                string url = $"{FirebaseDbUrl}matches.json";
-
                 RestClient.Get(url).Then(response =>
                 {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
-                    if (rawMatches == null || !rawMatches.Any())
-                    {
-                        reject(new Exception("No matches found"));
-                        return;
-                    }
-
-                    List<Match> matches = ExtractMatchesFromRawData(rawMatches);
-                    resolve(matches);
-                }).Catch(error => { reject(new Exception($"Error retrieving all matches: {error.Message}")); });
+                    resolve(JsonConvert.DeserializeObject<Match>(response.Text));
+                }).Catch(error => { reject(new Exception($"Error retrieving match by id: {error.Message}")); });
             });
         }
 
-        public static Promise<List<Match>> GetBettingAvailableMatches()
+
+        public static IPromise<List<Match>> GetAllMatches(bool? available = null, bool? finished = null)
         {
+            string queryUrl = $"{APISettings.Url}/api/match?available={available}&finished={finished}";
+
             return new Promise<List<Match>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}matches.json?orderBy=\"IsBettingAvailable\"&equalTo=true";
-                Debug.Log(queryUrl);
-
-                RestClient.Get(queryUrl).Then(response =>
-                {
-                    var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
-                    List<Match> matches = ExtractMatchesFromRawData(rawMatches);
-                    resolve(matches);
-                }).Catch(error =>
-                {
-                    reject(new Exception($"Error retrieving betting available matches: {error.Message}"));
-                });
+                RestClient.Get(queryUrl)
+                    .Then(response => { resolve(JsonConvert.DeserializeObject<List<Match>>(response.Text)); })
+                    .Catch(reject);
             });
         }
 
-        private static List<Match> ExtractMatchesFromRawData(Dictionary<string, MatchRequest> rawMatches)
+        public static IPromise<List<Match>> GetBettingAvailableMatches() //TODO replace
         {
-            List<Match> matches = new List<Match>();
-            foreach (var rawMatchKey in rawMatches.Keys)
-            {
-                var rawMatch = rawMatches[rawMatchKey];
+            string queryUrl = $"{APISettings.Url}/match?available=true";
 
-                Match match = new Match
-                {
-                    Id = rawMatchKey,
-                    ImageUrl = rawMatch.ImageUrl,
-                    MatchTitle = rawMatch.MatchTitle,
-                    IsBettingAvailable = rawMatch.IsBettingAvailable,
-                    IsMatchCanceled = rawMatch.IsMatchCanceled,
-                    FinishedDateUtc = rawMatch.FinishedDateUtc,
-                    Contestants = new List<Contestant>()
-                };
-
-                for (int i = 0; i < rawMatch.Contestants.Count; i++)
-                {
-                    var contestantRequest = rawMatch.Contestants[i];
-
-                    match.Contestants.Add(new Contestant
-                    {
-                        Id = i.ToString(),
-                        Name = contestantRequest.Name,
-                        Coefficient = contestantRequest.Coefficient,
-                        Winner = contestantRequest.Winner
-                    });
-                }
-
-                matches.Add(match);
-            }
-
-            return matches;
+            return RestClient.Get<List<Match>>(queryUrl);
         }
-
 
         private static string ValidateMatch(MatchRequest match)
         {

@@ -1,3 +1,4 @@
+using Libs.Models;
 using Libs.Repositories;
 using UnityEngine;
 
@@ -9,14 +10,13 @@ public class MatchManager : MonoBehaviour
 
    private void Start()
    {
-      MatchesRepository.GetNotFinishedMatches().Then(matches =>
+      MatchesRepository.GetAllMatches(finished: false).Then(matches =>
          {
-            
             MatchesCache.matches = matches;
-            foreach (var match in matches)
+            foreach (Match match in matches)
             {
                var tempMatchPrefab = Instantiate(matchPrefab, matchPrefabParent);
-               tempMatchPrefab.SetInfo(match.MatchTitle, match.ImageUrl,match.Id);
+               tempMatchPrefab.SetInfo(match.MatchTitle, match.ImageUrl, match.Id);
             }
          })
          .Catch(error =>

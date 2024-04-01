@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Libs.Config;
 using Newtonsoft.Json;
 using Proyecto26;
 using RSG;
@@ -13,6 +14,8 @@ namespace Libs.Repositories
     {
         private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
 
+        private static readonly ApiSettings APISettings = ConfigManager.Settings.ApiSettings;
+        
         public static IPromise<string> SaveBet(BetRequest betRequest)
         {
             var promise = new Promise<string>();
@@ -44,8 +47,10 @@ namespace Libs.Repositories
 
         public static IPromise<ResponseHelper> UpdateBet(string betId, BetRequest betToUpdate)
         {
-            string url = $"{FirebaseDbUrl}bets/{betId}.json";
+            string url = $"{APISettings.Url}/bets/{betId}";
+            
             var promise = new Promise<ResponseHelper>();
+            
             string validationMessage = ValidateBet(betToUpdate);
 
             if (validationMessage != null)
@@ -92,83 +97,21 @@ namespace Libs.Repositories
             });
         }
 
-        
         public static Promise<List<Bet>> GetAllBetsByUserId(string userId)
         {
-            return new Promise<List<Bet>>((resolve, reject) =>
-            {
-                string queryUrl = $"{FirebaseDbUrl}bets.json?orderBy=\"UserId\"&equalTo=\"{userId}\"";
-
-                RestClient.Get(queryUrl).Then(response =>
-                {
-                    var rawBets = JsonConvert.DeserializeObject<Dictionary<string, Bet>>(response.Text);
-
-                    if (rawBets == null || !rawBets.Any())
-                    {
-                        reject(new Exception("No bets found for the user"));
-                        return;
-                    }
-
-                    List<Bet> bets = new List<Bet>();
-                    foreach (var rawBetKey in rawBets.Keys)
-                    {
-                        var rawBet = rawBets[rawBetKey];
-
-                        Bet bet = new Bet
-                        {
-                            BetId = rawBetKey,
-                            MatchId = rawBet.MatchId,
-                            ContestantId = rawBet.ContestantId,
-                            BetAmount = rawBet.BetAmount,
-                            UserId = rawBet.UserId,
-                            IsActive = rawBet.IsActive
-                        };
-
-                        bets.Add(bet);
-                    }
-                    
-                    resolve(bets);
-                }).Catch(error =>
-                {
-                    reject(new Exception($"Error retrieving bets by user ID: {error.Message}"));
-                });
-            });
+            throw new NotImplementedException();
         }
         
-        public static Promise<List<Bet>> GetAllBetsByMatchId(string matchId)
+        public static Promise<List<Bet>> GetAllBetsByMatchId(int matchId)
         {
             return new Promise<List<Bet>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}bets.json?orderBy=\"MatchId\"&equalTo=\"{matchId}\"";
+                string url = $"{APISettings.Url}/api/bets?matchId={matchId}";
 
-                RestClient.Get(queryUrl).Then(response =>
+                RestClient.Get(url).Then(response =>
                 {
-                    var rawBets = JsonConvert.DeserializeObject<Dictionary<string, Bet>>(response.Text);
+                    var bets = JsonConvert.DeserializeObject<List<Bet>>(response.Text);
 
-                    if (rawBets == null || !rawBets.Any())
-                    {
-                        reject(new Exception("No bets found for the match"));
-                        return;
-                    }
-
-                    List<Bet> bets = new List<Bet>();
-                    foreach (var rawBetKey in rawBets.Keys)
-                    {
-                        var rawBet = rawBets[rawBetKey];
-
-                        Bet bet = new Bet
-                        {
-                            BetId = rawBetKey,
-                            MatchId = rawBet.MatchId,
-                            ContestantId = rawBet.ContestantId,
-                            BetAmount = rawBet.BetAmount,
-                            UserId = rawBet.UserId,
-                            IsActive = rawBet.IsActive
-                        };
-
-                        bets.Add(bet);
-                    }
-                    
                     resolve(bets);
                 }).Catch(error =>
                 {
@@ -179,9 +122,9 @@ namespace Libs.Repositories
 
         private static string ValidateBet(BetRequest bet)
         {
-            if (string.IsNullOrEmpty(bet.MatchId))
+            if (bet.MatchId <= 0)
                 return "Match ID cannot be empty.";
-            if (string.IsNullOrEmpty(bet.ContestantId))
+            if (bet.ContestantId <= 0)
                 return "Contestant ID cannot be empty.";
             if (bet.BetAmount <= 0)
                 return "Bet amount should be greater than 0.";

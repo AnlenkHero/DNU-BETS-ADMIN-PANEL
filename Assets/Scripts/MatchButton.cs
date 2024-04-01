@@ -1,5 +1,5 @@
-using System;
 using Libs.Helpers;
+using Libs.Repositories;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,16 +7,19 @@ using UnityEngine.UI;
 
 public class MatchButton : MonoBehaviour
 {
-    [SerializeField] private string id;
+    private const string EditSceneName = "EditScene";
+    
+    [SerializeField] private int id;
     [SerializeField] private TextMeshProUGUI buttonText;
     [SerializeField] private Button button;
     [SerializeField] private RawImage image;
+    
     private void Awake()
     {
         button.onClick.AddListener(MoveToEdit);
     }
 
-    public void SetInfo(string text,string imageUrl,string matchId)
+    public void SetInfo(string text, string imageUrl, int matchId)
     {
         buttonText.text = text;
         id = matchId;
@@ -34,9 +37,18 @@ public class MatchButton : MonoBehaviour
     }
     private void MoveToEdit()
     {
-        if(String.IsNullOrEmpty(id)!=true)
-            MatchesCache.selectedMatchID = id;
-        SceneManager.LoadScene("EditScene");
+        if (id > 0)
+        {
+            MatchesRepository.GetMatchById(id).Then(match =>
+            {
+                MatchesCache.SelectedMatch = match; 
+                SceneManager.LoadScene(EditSceneName);
+            });
+            
+            return;
+        }
+        
+        SceneManager.LoadScene(EditSceneName);
     }
     
 }
