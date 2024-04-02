@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Libs.Config;
 using Libs.Helpers;
 using Libs.Models;
@@ -12,7 +11,7 @@ using UnityEngine;
 
 namespace Libs.Repositories
 {
-    public class MatchesRepository
+    public static class MatchesRepository
     {
         private static readonly ApiSettings APISettings = ConfigManager.Settings.ApiSettings;
         
@@ -34,14 +33,8 @@ namespace Libs.Repositories
             {
                 match.ImageUrl = imageUrl;
                 string url = $"{APISettings.Url}/api/match";
-                string test = JsonConvert.SerializeObject(match);
-                var requestHelper = new RequestHelper()
-                {
-                    Uri = url,
-                    Body = match,
-                    EnableDebug = true
-                };
-                RestClient.Post(requestHelper).Then(response =>
+                
+                RestClient.Post(url, match).Then(response =>
                 {
                     Dictionary<string,int> jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, int>>(response.Text);
 
@@ -109,8 +102,6 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            string test = JsonConvert.SerializeObject(matchToUpdate);
-            
             return RestClient.Put(url, matchToUpdate);
         }
 

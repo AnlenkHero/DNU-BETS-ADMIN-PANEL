@@ -200,7 +200,7 @@ public class EditorManager : MonoBehaviour
         MatchesRepository.UpdateMatch(MatchesCache.SelectedMatch.Id, matchToUpdate, texture)
         .Then(_ => {
             infoPanel.ShowPanel(ColorHelper.LightGreen, "Match was edited successfully!",
-                $"Edited match ID: {MatchesCache.selectedMatchID}");
+                $"Edited match ID: {MatchesCache.SelectedMatch.Id}");
         })
         .Catch(x =>
         {
@@ -309,9 +309,10 @@ public class EditorManager : MonoBehaviour
         var match = MatchesCache.SelectedMatch;
         ImageHelper.DeleteImage(match.ImageUrl);
         infoPanel.ShowPanel(ColorHelper.LightGreen, "Match deleted successfully!",
-            $"Deleted match ID: {MatchesCache.selectedMatchID}",
+            $"Deleted match ID: {MatchesCache.SelectedMatch.Id}",
             () => infoPanel.AddButton("Back to match choose", BackToMatchChooseScene));
-        MatchesCache.selectedMatchID = null;
+        
+        MatchesCache.SelectedMatch = default;
     }
 
     private void HandleMatchDeletionFailure(Exception error)
