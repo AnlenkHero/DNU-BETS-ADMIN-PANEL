@@ -119,23 +119,33 @@ namespace Libs.Repositories
         }
 
 
-        public static IPromise<List<Match>> GetAllMatches(bool? available = null, bool? finished = null)
+        public static IPromise<List<Match>> GetAllMatches(bool? available = null, bool? finished = null, bool withBets = false)
         {
-            string queryUrl = $"{APISettings.Url}/api/match?available={available}&finished={finished}";
+            var filter = new MatchesFilterModel()
+            {
+                Available = available,
+                Finished = finished,
+                WithBets = withBets
+            };
 
+            var requestHelper = new RequestHelper()
+            {
+                Uri = $"{APISettings.Url}/api/match",
+                BodyString = JsonConvert.SerializeObject(filter)
+            };
+            
             return new Promise<List<Match>>((resolve, reject) =>
             {
-                RestClient.Get(queryUrl)
+                RestClient.Get(requestHelper)
                     .Then(response => { resolve(JsonConvert.DeserializeObject<List<Match>>(response.Text)); })
-                    .Catch(reject);
+                    .Catch(e =>
+                    {
+                        var exception = e as RequestException;
+                        
+                        Debug.LogError($"Error getting matches: {exception.StatusCode} {exception.Response}"); 
+                        reject(exception);
+                    });
             });
-        }
-
-        public static IPromise<List<Match>> GetBettingAvailableMatches() //TODO replace
-        {
-            string queryUrl = $"{APISettings.Url}/match?available=true";
-
-            return RestClient.Get<List<Match>>(queryUrl);
         }
 
         private static string ValidateMatch(MatchRequest match)

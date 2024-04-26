@@ -12,13 +12,12 @@ namespace Libs.Repositories
 {
     public static class BetsRepository
     {
-        private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
-
         private static readonly ApiSettings APISettings = ConfigManager.Settings.ApiSettings;
+        private static readonly string BaseUrl = $"{ConfigManager.Settings.ApiSettings.Url}/api/bet";
         
-        public static IPromise<string> SaveBet(BetRequest betRequest)
+        public static IPromise<int> SaveBet(BetRequest betRequest)
         {
-            var promise = new Promise<string>();
+            var promise = new Promise<int>();
 
             string validationMessage = ValidateBet(betRequest);
 
@@ -28,11 +27,13 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            RestClient.Post($"{FirebaseDbUrl}bets.json", betRequest).Then(response =>
+            string url = $"{APISettings.Url}/api/bet";
+            
+            RestClient.Post(url, betRequest).Then(response =>
             {
-                var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
+                var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, int>>(response.Text);
 
-                if (jsonResponse != null && jsonResponse.TryGetValue("name", out string newBetId))
+                if (jsonResponse != null && jsonResponse.TryGetValue("id", out int newBetId))
                 {
                     promise.Resolve(newBetId);
                 }
@@ -47,7 +48,7 @@ namespace Libs.Repositories
 
         public static IPromise<ResponseHelper> UpdateBet(string betId, BetRequest betToUpdate)
         {
-            string url = $"{APISettings.Url}/bets/{betId}";
+            string url = $"{APISettings.Url}/api/bet/{betId}";
             
             var promise = new Promise<ResponseHelper>();
             
@@ -71,7 +72,7 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            string url = $"{FirebaseDbUrl}bets/{betId}.json";
+            string url = $"{APISettings.Url}/api/bet/{betId}";
             return RestClient.Delete(url);
         }
 
@@ -79,7 +80,7 @@ namespace Libs.Repositories
         {
             return new Promise<Bet>((resolve, reject) =>
             {
-                RestClient.Get($"{FirebaseDbUrl}bets/{betId}.json").Then(response =>
+                RestClient.Get($"{APISettings}/api/bet/{betId}").Then(response =>
                 {
                     Bet bet = JsonConvert.DeserializeObject<Bet>(response.Text);
 
@@ -97,16 +98,17 @@ namespace Libs.Repositories
             });
         }
 
-        public static Promise<List<Bet>> GetAllBetsByUserId(string userId)
+        public static Promise<List<Bet>> GetAllBets(int? userId = null, int? matchId = null) //TODO pagination
         {
-            throw new NotImplementedException();
-        }
-        
-        public static Promise<List<Bet>> GetAllBetsByMatchId(int matchId)
-        {
+            if (userId == null && matchId == null)
+            {
+                Promise<List<Bet>> promise = new Promise<List<Bet>>();
+                promise.Reject(new ArgumentNullException("Cannot get all bets"));
+            }
+            
             return new Promise<List<Bet>>((resolve, reject) =>
             {
-                string url = $"{APISettings.Url}/api/bets?matchId={matchId}";
+                string url = $"{APISettings.Url}/api/bet?userId={userId}&matchId={matchId}";
 
                 RestClient.Get(url).Then(response =>
                 {
@@ -119,7 +121,7 @@ namespace Libs.Repositories
                 });
             });
         }
-
+        
         private static string ValidateBet(BetRequest bet)
         {
             if (bet.MatchId <= 0)
@@ -128,8 +130,8 @@ namespace Libs.Repositories
                 return "Contestant ID cannot be empty.";
             if (bet.BetAmount <= 0)
                 return "Bet amount should be greater than 0.";
-            if (string.IsNullOrEmpty(bet.UserId))
-                return "User ID cannot be empty.";
+            if (bet.UserId <= 0)
+                return "User ID should be greater than 0.";
 
             return null;
         }

@@ -7,7 +7,7 @@ namespace Libs.Models
         public int MatchId;
         public int ContestantId;
         public double BetAmount;
-        public string UserId;
+        public int UserId;
         public bool IsActive;
     }
 }

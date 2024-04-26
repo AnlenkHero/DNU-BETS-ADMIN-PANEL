@@ -14,6 +14,7 @@ public class PlayerBuffManager : MonoBehaviour
 
     private void Awake()
     {
+        //TODO GET UNPROCESSEDD BUFFS FROM API!
         UserRepository.GetAllUsers().Then(userList =>
         {
             IEnumerable<User> usersWithUnprocessedBuffs = userList.Where(x => x.buffPurchase.Any(x => !x.isProcessed));

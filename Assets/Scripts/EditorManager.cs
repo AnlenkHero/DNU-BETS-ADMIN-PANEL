@@ -244,7 +244,7 @@ public class EditorManager : MonoBehaviour
         
         if (MatchesCache.SelectedMatch != null)
         {
-            BetsRepository.GetAllBetsByMatchId(MatchesCache.SelectedMatch.Id).Then(bets =>
+            BetsRepository.GetAllBets(matchId: MatchesCache.SelectedMatch.Id).Then(bets =>
             {
                 foreach (var contestant in MatchesCache.SelectedMatch.Contestants)
                 {

@@ -39,14 +39,14 @@ public class BuffInfoPanel : MonoBehaviour
         processButton.onClick.AddListener(() => ProcessBuff(user));
     }
 
-    private void ProcessBuff(User user)
+    private void ProcessBuff(User user) //TODO CHANGE
     {
         foreach (var buffPurchase in user.buffPurchase.Where(x => x.isProcessed == false))
         {
             buffPurchase.isProcessed = true;
         }
 
-        UserRepository.GetUserByUserId(user.userId).Then((checkUser =>
+        UserRepository.GetUserById(user.id).Then((checkUser =>
         {
             if (checkUser.buffPurchase.Count != user.buffPurchase.Count)
             {
