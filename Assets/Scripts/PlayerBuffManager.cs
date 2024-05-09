@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using Libs.Helpers;
 using Libs.Models;
@@ -14,22 +13,25 @@ public class PlayerBuffManager : MonoBehaviour
 
     private void Awake()
     {
-        //TODO GET UNPROCESSEDD BUFFS FROM API!
-        UserRepository.GetAllUsers().Then(userList =>
+        UserRepository.GetAllUsersWithPurchases(isBuffProcessed: false).Then(users =>
         {
-            IEnumerable<User> usersWithUnprocessedBuffs = userList.Where(x => x.buffPurchase.Any(x => !x.isProcessed));
-            foreach (User user in usersWithUnprocessedBuffs)
-            {
-                var buffPanel = Instantiate(buffInfoPrefab, buffInfoParent);
-                buffPanel.SetData(user, infoPanel);
-            }
-
-            if (!usersWithUnprocessedBuffs.Any())
+            if (users?.Any() != true)
             {
                 infoPanel.ShowPanel(ColorHelper.HotPink, "No users found",
                     "There are no users with unprocessed buffs",
                     () => { infoPanel.AddButton("Back", () => SceneManager.LoadScene("MatchChooseScene")); });
+                
+                return;
             }
+            
+            foreach (User user in users)
+            {
+                var buffPanel = Instantiate(buffInfoPrefab, buffInfoParent);
+                buffPanel.SetData(user, infoPanel);
+            }
+        }).Catch(e =>
+        {
+            Debug.LogError(e.Message);
         });
     }
 }

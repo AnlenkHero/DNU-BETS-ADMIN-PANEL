@@ -133,5 +133,44 @@ namespace Libs.Repositories
                 }).Catch(error => { reject(new Exception($"Error retrieving all users: {error.Message}")); });
             });
         }
+        
+        public static IPromise<IList<User>> GetAllUsersWithPurchases(bool? isBuffProcessed = null, int? userId = null)
+        {
+            var promise = new Promise<IList<User>>();
+
+            var requestHelper = new RequestHelper()
+            {
+                BodyString = JsonConvert.SerializeObject(new BuffPurchaseFilterModel(userId, isBuffProcessed)),
+                Uri = $"{BaseUrl}/with-purchases"
+            };
+            
+            RestClient.Get(requestHelper).Then(response =>
+            {
+                if (string.IsNullOrEmpty(response.Text))
+                {
+                    promise.Resolve(new List<User>());
+                }
+
+                var jsonResponse = JsonConvert.DeserializeObject<List<User>>(response.Text);
+                promise.Resolve(jsonResponse);
+            }).Catch(error => { promise.Reject(error); });
+
+            return promise;
+        }
+
+        public static IPromise<ResponseHelper> ProcessAllUserBuffs(int id, int currentBuffsCount)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(id));
+            }
+            
+            var helper = new RequestHelper()
+            {
+                Uri = $"{BaseUrl}/{id}/buffPurchase/process?currentBuffsCount={currentBuffsCount}"
+            };
+            
+            return RestClient.Put(helper);
+        }
     }
 }

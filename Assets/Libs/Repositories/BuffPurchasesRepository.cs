@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Libs.Config;
 using Libs.Models;
+using Libs.Models.RequestModels;
 using Newtonsoft.Json;
 using Proyecto26;
 using RSG;

@@ -2,6 +2,7 @@ using System.Linq;
 using Libs.Helpers;
 using Libs.Models;
 using Libs.Repositories;
+using Proyecto26;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,10 +20,10 @@ public class BuffInfoPanel : MonoBehaviour
 
     public void SetData(User user, InfoPanel infoPanelObject)
     {
-        var unprocessedBuffs = user.buffPurchase.Count(x => x.isProcessed == false);
+        var unprocessedBuffs = user.buffPurchases.Count(x => !x.isProcessed);
         infoPanel = infoPanelObject;
         profileName.text = user.userName;
-        buffPurchasedText.text = $"Buff purchased:{user.buffPurchase.Count.ToString()}";
+        buffPurchasedText.text = $"Buff purchased:{user.buffPurchases.Count.ToString()}";
         buffProcessedText.text = $"Buff unprocessed:{unprocessedBuffs.ToString()}";
         TextureLoader.LoadTexture(this, user.imageUrl, texture2D =>
         {
@@ -39,35 +40,29 @@ public class BuffInfoPanel : MonoBehaviour
         processButton.onClick.AddListener(() => ProcessBuff(user));
     }
 
-    private void ProcessBuff(User user) //TODO CHANGE
+    private void ProcessBuff(User user)
     {
-        foreach (var buffPurchase in user.buffPurchase.Where(x => x.isProcessed == false))
+        UserRepository.ProcessAllUserBuffs(user.id, user.buffPurchases.Count).Then(checkUser =>
         {
-            buffPurchase.isProcessed = true;
-        }
+            buffProcessedText.text = $"Buffs unprocessed:0";
+            infoPanel.ShowPanel(ColorHelper.LightGreen, "Success!!!",
+                $"Buffs were processed for {user.userName}");
+        }).Catch(e =>
+        {
+            var requestException = e as RequestException;
 
-        UserRepository.GetUserById(user.id).Then((checkUser =>
-        {
-            if (checkUser.buffPurchase.Count != user.buffPurchase.Count)
+            if (requestException.StatusCode is StatusCodes.BadRequestStatusCode or StatusCodes.NotFoundStatusCode)
             {
                 infoPanel.ShowPanel(ColorHelper.HotPink, "Error!!!",
-                    $"User has bought more buffs since you have opened this scene.",
+                    $"{requestException.StatusCode}: {requestException.Response}",
                     () => infoPanel.AddButton("Refresh scene",
                         () => SceneManager.LoadScene(SceneManager.GetActiveScene().name)));
             }
             else
             {
-                UserRepository.UpdateUserInfo(user).Then(_ =>
-                {
-                    buffProcessedText.text = $"Buffs unprocessed:0";
-                    infoPanel.ShowPanel(ColorHelper.LightGreen, "Success!!!",
-                        $"Buffs were processed for {user.userName}");
-                }).Catch(exception =>
-                {
-                    infoPanel.ShowPanel(ColorHelper.HotPink, "Error!!!",
-                        $"Buffs were not processed.\n{exception.Message}");
-                });
+                infoPanel.ShowPanel(ColorHelper.HotPink, "Error!!!",
+                    $"Buffs were not processed.\n{requestException.Message}");
             }
-        }));
+        });
     }
 }

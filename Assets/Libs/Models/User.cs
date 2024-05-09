@@ -11,6 +11,6 @@ namespace Libs.Models
         public string userName;
         public double balance;
         public string imageUrl;
-        public List<BuffPurchase> buffPurchase = new List<BuffPurchase>();
+        public List<BuffPurchase> buffPurchases = new List<BuffPurchase>();
     }
 }

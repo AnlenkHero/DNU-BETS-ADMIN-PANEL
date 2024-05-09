@@ -236,7 +236,6 @@ MonoBehaviour:
   buffProcessedText: {fileID: 2484889716806348934}
   processButton: {fileID: 1110329596644173536}
   backgroundImageScroller: {fileID: 3902752379677793758}
-  infoPanel: {fileID: 0}
 --- !u!114 &1673919649808053035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -477,8 +476,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: NAME
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 7ddbd629babfac0438de2ae79c96f365, type: 2}
-  m_sharedMaterial: {fileID: -4668654087732327743, guid: 7ddbd629babfac0438de2ae79c96f365,
+  m_fontAsset: {fileID: 11400000, guid: 4d4a16533c8118649a5af01c7569eb70, type: 2}
+  m_sharedMaterial: {fileID: 3872252818196023514, guid: 4d4a16533c8118649a5af01c7569eb70,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -503,7 +502,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
+  m_fontSize: 51.8
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
