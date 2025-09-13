@@ -5,6 +5,7 @@ using Libs.Helpers;
 using Libs.Models;
 using Libs.Models.RequestModels;
 using Newtonsoft.Json;
+using Project_Files.Libs;
 using Proyecto26;
 using RSG;
 using UnityEngine;
@@ -13,9 +14,6 @@ namespace Libs.Repositories
 {
     public static class MatchesRepository
     {
-        private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
-        private const string FirebaseStorageURL = "https://firebasestorage.googleapis.com/v0/b/wwe-bets.appspot.com";
-
         public static IPromise<string> Save(MatchRequest match, Texture2D imageTexture)
         {
             var promise = new Promise<string>();
@@ -34,7 +32,7 @@ namespace Libs.Repositories
             {
                 match.ImageUrl = imageUrl;
 
-                RestClient.Post($"{FirebaseDbUrl}matches.json", match).Then(response =>
+                RestClient.Post($"{Config.FirebaseDbUrl}matches.json", match).Then(response =>
                 {
                     var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
 
@@ -61,14 +59,14 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            string url = $"{Config.FirebaseDbUrl}matches/{matchId}.json";
             return RestClient.Delete(url);
         }
 
         public static IPromise<ResponseHelper> UpdateMatch(string matchId, MatchRequest matchToUpdate,
             Texture2D imageToChange = null, string imageURL = null)
         {
-            string url = $"{FirebaseDbUrl}matches/{matchId}.json";
+            string url = $"{Config.FirebaseDbUrl}matches/{matchId}.json";
             var promise = new Promise<ResponseHelper>();
             string validationMessage = ValidateMatch(matchToUpdate);
 
@@ -110,7 +108,7 @@ namespace Libs.Repositories
         {
             return new Promise<Match>((resolve, reject) =>
             {
-                RestClient.Get($"{FirebaseDbUrl}matches.json").Then(response =>
+                RestClient.Get($"{Config.FirebaseDbUrl}matches.json").Then(response =>
                 {
                     var rawMatches = JsonConvert.DeserializeObject<Dictionary<string, MatchRequest>>(response.Text);
 
@@ -139,7 +137,7 @@ namespace Libs.Repositories
         {
             return new Promise<List<Match>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}matches.json?orderBy=\"FinishedDateUtc\"&equalTo=\"\"";
+                string queryUrl = $"{Config.FirebaseDbUrl}matches.json?orderBy=\"FinishedDateUtc\"&equalTo=\"\"";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
@@ -157,7 +155,7 @@ namespace Libs.Repositories
         {
             return new Promise<List<Match>>((resolve, reject) =>
             {
-                string url = $"{FirebaseDbUrl}matches.json";
+                string url = $"{Config.FirebaseDbUrl}matches.json";
 
                 RestClient.Get(url).Then(response =>
                 {
@@ -178,7 +176,7 @@ namespace Libs.Repositories
         {
             return new Promise<List<Match>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}matches.json?orderBy=\"IsBettingAvailable\"&equalTo=true";
+                string queryUrl = $"{Config.FirebaseDbUrl}matches.json?orderBy=\"IsBettingAvailable\"&equalTo=true";
                 Debug.Log(queryUrl);
 
                 RestClient.Get(queryUrl).Then(response =>

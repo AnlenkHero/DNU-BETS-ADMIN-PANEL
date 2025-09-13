@@ -6,13 +6,12 @@ using Proyecto26;
 using RSG;
 using Libs.Models;
 using Libs.Models.RequestModels;
+using Project_Files.Libs;
 
 namespace Libs.Repositories
 {
     public static class BetsRepository
     {
-        private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
-
         public static IPromise<string> SaveBet(BetRequest betRequest)
         {
             var promise = new Promise<string>();
@@ -25,7 +24,7 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            RestClient.Post($"{FirebaseDbUrl}bets.json", betRequest).Then(response =>
+            RestClient.Post($"{Config.FirebaseDbUrl}bets.json", betRequest).Then(response =>
             {
                 var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
 
@@ -44,7 +43,7 @@ namespace Libs.Repositories
 
         public static IPromise<ResponseHelper> UpdateBet(string betId, BetRequest betToUpdate)
         {
-            string url = $"{FirebaseDbUrl}bets/{betId}.json";
+            string url = $"{Config.FirebaseDbUrl}bets/{betId}.json";
             var promise = new Promise<ResponseHelper>();
             string validationMessage = ValidateBet(betToUpdate);
 
@@ -66,7 +65,7 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            string url = $"{FirebaseDbUrl}bets/{betId}.json";
+            string url = $"{Config.FirebaseDbUrl}bets/{betId}.json";
             return RestClient.Delete(url);
         }
 
@@ -74,7 +73,7 @@ namespace Libs.Repositories
         {
             return new Promise<Bet>((resolve, reject) =>
             {
-                RestClient.Get($"{FirebaseDbUrl}bets/{betId}.json").Then(response =>
+                RestClient.Get($"{Config.FirebaseDbUrl}bets/{betId}.json").Then(response =>
                 {
                     Bet bet = JsonConvert.DeserializeObject<Bet>(response.Text);
 
@@ -97,7 +96,7 @@ namespace Libs.Repositories
         {
             return new Promise<List<Bet>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}bets.json?orderBy=\"UserId\"&equalTo=\"{userId}\"";
+                string queryUrl = $"{Config.FirebaseDbUrl}bets.json?orderBy=\"UserId\"&equalTo=\"{userId}\"";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
@@ -139,7 +138,7 @@ namespace Libs.Repositories
         {
             return new Promise<List<Bet>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}bets.json?orderBy=\"MatchId\"&equalTo=\"{matchId}\"";
+                string queryUrl = $"{Config.FirebaseDbUrl}bets.json?orderBy=\"MatchId\"&equalTo=\"{matchId}\"";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {

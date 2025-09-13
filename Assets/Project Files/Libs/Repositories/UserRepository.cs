@@ -4,6 +4,7 @@ using System.Linq;
 using Libs.Models;
 using Libs.Models.RequestModels;
 using Newtonsoft.Json;
+using Project_Files.Libs;
 using Proyecto26;
 using RSG;
 
@@ -11,13 +12,12 @@ namespace Libs.Repositories
 {
     public static class UserRepository
     {
-        private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
-
+        
         public static Promise<User> GetUserByUserId(string userId)
         {
             return new Promise<User>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}users.json?orderBy=\"userId\"&equalTo=\"{userId}\"";
+                string queryUrl = $"{Config.FirebaseDbUrl}users.json?orderBy=\"userId\"&equalTo=\"{userId}\"";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
@@ -57,7 +57,7 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            RestClient.Post($"{FirebaseDbUrl}users.json", user).Then(response =>
+            RestClient.Post($"{Config.FirebaseDbUrl}users.json", user).Then(response =>
             {
                 var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
 
@@ -78,7 +78,7 @@ namespace Libs.Repositories
         public static IPromise<ResponseHelper> UpdateUserInfo(User user)
         {
             var userRequest = new UserRequest {userName = user.userName, balance = user.balance, userId = user.userId, imageUrl = user.imageUrl, buffPurchase = user.buffPurchase};
-            string keyUrlPart = $"{FirebaseDbUrl}users/{user.id}.json";
+            string keyUrlPart = $"{Config.FirebaseDbUrl}users/{user.id}.json";
             return RestClient.Put(keyUrlPart, userRequest);
         }
 
@@ -87,7 +87,7 @@ namespace Libs.Repositories
         {
             return new Promise<double>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}users.json?orderBy=\"userId\"&equalTo=\"{userId}\"";
+                string queryUrl = $"{Config.FirebaseDbUrl}users.json?orderBy=\"userId\"&equalTo=\"{userId}\"";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
@@ -115,7 +115,7 @@ namespace Libs.Repositories
         {
             return new Promise<List<User>>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}users.json";
+                string queryUrl = $"{Config.FirebaseDbUrl}users.json";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {

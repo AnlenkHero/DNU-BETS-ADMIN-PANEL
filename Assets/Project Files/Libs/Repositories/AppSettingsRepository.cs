@@ -4,18 +4,17 @@ using Newtonsoft.Json;
 using Proyecto26;
 using RSG;
 using Libs.Models;
+using Project_Files.Libs;
 
 namespace Libs.Repositories
 {
     public static class AppSettingsRepository
     {
-        private const string FirebaseDbUrl = "https://wwe-bets-default-rtdb.europe-west1.firebasedatabase.app/";
-
         public static IPromise<AppSettings> GetAppSettings()
         {
             return new Promise<AppSettings>((resolve, reject) =>
             {
-                string queryUrl = $"{FirebaseDbUrl}appSettings.json";
+                string queryUrl = $"{Config.FirebaseDbUrl}appSettings.json";
 
                 RestClient.Get(queryUrl).Then(response =>
                 {
@@ -42,7 +41,7 @@ namespace Libs.Repositories
                 return promise;
             }
 
-            RestClient.Post($"{FirebaseDbUrl}appSettings.json", appSettings).Then(response =>
+            RestClient.Post($"{Config.FirebaseDbUrl}appSettings.json", appSettings).Then(response =>
             {
                 var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(response.Text);
 

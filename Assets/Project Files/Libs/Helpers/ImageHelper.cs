@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Project_Files.Libs;
 using Proyecto26;
 using RSG;
 using UnityEngine;
@@ -9,8 +10,6 @@ namespace Libs.Helpers
 {
     public static class ImageHelper
     {
-        private const string FirebaseStorageURL = "https://firebasestorage.googleapis.com/v0/b/wwe-bets.appspot.com";
-
         public static Promise<string> UploadImage(Texture2D imageToUpload, string fileName)
         {
             return new Promise<string>((resolve, reject) =>
@@ -24,7 +23,7 @@ namespace Libs.Helpers
 
                 var requestData = new RequestHelper
                 {
-                    Uri = $"{FirebaseStorageURL}/o?uploadType=media&name={fileName}",
+                    Uri = $"{Config.FirebaseStorageURL}/o?uploadType=media&name={fileName}",
                     Method = "POST",
                     BodyRaw = imageBytes,
                     Headers = headers
@@ -47,7 +46,7 @@ namespace Libs.Helpers
                 var uri = new Uri(imageUrl);
                 string fileName = System.Web.HttpUtility.UrlDecode(uri.Segments.Last());
 
-                string deleteEndpoint = $"{FirebaseStorageURL}/o/{fileName}";
+                string deleteEndpoint = $"{Config.FirebaseStorageURL}/o/{fileName}";
 
                 RestClient.Request(new RequestHelper
                     {
@@ -68,10 +67,10 @@ namespace Libs.Helpers
         {
             return new Promise<string>((resolve, reject) =>
             {
-                RestClient.Get($"{FirebaseStorageURL}/o/{fileName}").Then(response =>
+                RestClient.Get($"{Config.FirebaseStorageURL}/o/{fileName}").Then(response =>
                 {
                     string downloadToken = JsonUtility.FromJson<DownloadUrlResponse>(response.Text).downloadTokens;
-                    string completeUrl = $"{FirebaseStorageURL}/o/{fileName}?alt=media&token={downloadToken}";
+                    string completeUrl = $"{Config.FirebaseStorageURL}/o/{fileName}?alt=media&token={downloadToken}";
                     resolve(completeUrl);
                 }).Catch(error => { reject(new Exception($"Error retrieving download URL: {error.Message}")); });
             });
